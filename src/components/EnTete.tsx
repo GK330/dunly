@@ -4,7 +4,11 @@ import SentryUtilisateur from "@/components/SentryUtilisateur";
 import { estAdministrateur } from "@/lib/admin";
 import { creerClientServeur } from "@/lib/supabase/server";
 
-const LIENS = [{ href: "/", libelle: "Tableau de bord" }];
+const LIENS = [
+  { href: "/", libelle: "Tableau de bord" },
+  { href: "/factures", libelle: "Factures" },
+  { href: "/clients", libelle: "Clients" },
+];
 
 export default async function EnTete() {
   const supabase = await creerClientServeur();

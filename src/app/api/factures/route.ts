@@ -1,0 +1,39 @@
+import { COLONNES_FACTURE } from "@/lib/facture";
+import { reponseErreurBase, reponseNonConnecte } from "@/lib/reponses-api";
+import { lireSaisieFacture } from "@/lib/saisie-facture";
+import { creerClientServeur } from "@/lib/supabase/server";
+import { lireCorps } from "@/lib/validation";
+
+// Création d'une facture saisie à la main
+export async function POST(request: Request) {
+  // 0. Vérification de la session
+  const supabase = await creerClientServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return reponseNonConnecte("créer une facture");
+  }
+
+  try {
+    // 1. Validation des données
+    const corps = await lireCorps(request);
+    const saisie = await lireSaisieFacture(supabase, corps);
+
+    // 2. Enregistrement, au nom de l'utilisateur connecté
+    const { data, error } = await supabase
+      .from("factures")
+      .insert(saisie)
+      .select(COLONNES_FACTURE)
+      .single();
+
+    if (error) throw error;
+
+    return Response.json(data, { status: 201 });
+  } catch (erreur) {
+    return reponseErreurBase(erreur, "Erreur lors de la création de la facture", {
+      doublon: "Une facture porte déjà ce numéro.",
+    });
+  }
+}
