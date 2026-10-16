@@ -8,6 +8,7 @@ const LIENS = [
   { href: "/", libelle: "Tableau de bord" },
   { href: "/factures", libelle: "Factures" },
   { href: "/clients", libelle: "Clients" },
+  { href: "/parametres", libelle: "Paramètres" },
 ];
 
 export default async function EnTete() {
