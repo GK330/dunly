@@ -1,5 +1,6 @@
 import { estAdministrateur } from "@/lib/admin";
 import { CONTROLES } from "@/lib/controles";
+import { enregistrerControle, lireHistorique } from "@/lib/historique";
 import { executerControle, type Statut } from "@/lib/statut";
 import { creerClientServeur } from "@/lib/supabase/server";
 
@@ -25,9 +26,13 @@ export async function GET() {
   if (services.some((s) => s.statut === "degrade")) statutGlobal = "degrade";
   if (services.some((s) => s.statut === "en_panne")) statutGlobal = "en_panne";
 
+  await enregistrerControle(statutGlobal, services);
+  const historique = await lireHistorique();
+
   return Response.json({
     verifieLe: new Date().toISOString(),
     statutGlobal,
     services,
+    historique,
   });
 }

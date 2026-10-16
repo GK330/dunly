@@ -304,6 +304,109 @@ const controleLangfuse: Controle = {
   },
 };
 
+export const VARIABLES_REQUISES = [
+  "AI_BASE_URL",
+  "AI_API_KEY",
+  "AI_MODEL",
+  "NEXT_PUBLIC_SUPABASE_URL",
+  "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY",
+  "SUPABASE_SECRET_KEY",
+  "ADMIN_EMAILS",
+  "APP_URL",
+  "UPSTASH_REDIS_REST_URL",
+  "UPSTASH_REDIS_REST_TOKEN",
+  "QSTASH_URL",
+  "QSTASH_TOKEN",
+  "QSTASH_CURRENT_SIGNING_KEY",
+  "QSTASH_NEXT_SIGNING_KEY",
+  "RESEND_API_KEY",
+  "EMAIL_EXPEDITEUR",
+  "NEXT_PUBLIC_SENTRY_DSN",
+  "UPTIMEROBOT_API_KEY",
+  "LANGFUSE_BASE_URL",
+  "LANGFUSE_PUBLIC_KEY",
+  "LANGFUSE_SECRET_KEY",
+  "JETON_API_VERCEL",
+  "PROJET_VERCEL_ID",
+  "EQUIPE_VERCEL_ID",
+];
+
+const controleSecrets: Controle = {
+  service: "Infisical",
+  description: "Gestion centralisée des secrets",
+  verifier: async () => {
+    const manquantes = VARIABLES_REQUISES.filter((nom) => !process.env[nom]);
+
+    if (manquantes.length > 0) {
+      throw new Error(`Variables manquantes : ${manquantes.join(", ")}`);
+    }
+
+    const reponse = await fetch("https://eu.infisical.com/api/status", { cache: "no-store" });
+    if (!reponse.ok) {
+      throw new Error(`Le service a répondu avec le statut ${reponse.status}`);
+    }
+
+    return `Service joignable · ${VARIABLES_REQUISES.length} variables configurées`;
+  },
+};
+
+const controleDeploiement: Controle = {
+  service: "Déploiement continu",
+  description: "Dernier déploiement de production sur Vercel",
+  verifier: async () => {
+    const jeton = process.env.JETON_API_VERCEL;
+    const projet = process.env.PROJET_VERCEL_ID;
+    const equipe = process.env.EQUIPE_VERCEL_ID;
+
+    if (!jeton || !projet || !equipe) {
+      throw new Error("Variables JETON_API_VERCEL, PROJET_VERCEL_ID ou EQUIPE_VERCEL_ID manquantes");
+    }
+
+    const parametres = new URLSearchParams({
+      projectId: projet,
+      teamId: equipe,
+      target: "production",
+      limit: "1",
+    });
+
+    const reponse = await fetch(`https://api.vercel.com/v6/deployments?${parametres}`, {
+      headers: { Authorization: `Bearer ${jeton}` },
+      cache: "no-store",
+    });
+
+    if (!reponse.ok) {
+      throw new Error(`L'API Vercel a répondu avec le statut ${reponse.status}`);
+    }
+
+    const { deployments } = await reponse.json();
+    const dernier = deployments?.[0];
+
+    if (!dernier) {
+      throw new Error("Aucun déploiement de production trouvé");
+    }
+
+    const etat: string = dernier.state ?? dernier.readyState;
+    const commitDernier: string = dernier.meta?.githubCommitSha?.slice(0, 7) ?? "inconnu";
+    const commitEnLigne = process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7);
+
+    if (etat === "ERROR") {
+      throw new Error(
+        `La dernière construction de production a échoué (commit ${commitDernier}) : la version précédente est toujours en ligne`
+      );
+    }
+
+    if (etat === "BUILDING" || etat === "QUEUED" || etat === "INITIALIZING") {
+      return `Construction de production en cours (commit ${commitDernier})`;
+    }
+
+    if (commitEnLigne && commitEnLigne !== commitDernier) {
+      return `Version ${commitDernier} prête, en attente de mise en production · En ligne : ${commitEnLigne}`;
+    }
+
+    return `Dernier déploiement réussi et en ligne (commit ${commitDernier})`;
+  },
+};
+
 export const CONTROLES: Controle[] = [
   controleVercel,
   controleIA,
@@ -317,4 +420,6 @@ export const CONTROLES: Controle[] = [
   controleSentry,
   controleUptimeRobot,
   controleLangfuse,
+  controleSecrets,
+  controleDeploiement,
 ];
