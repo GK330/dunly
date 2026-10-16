@@ -1,5 +1,8 @@
 import Link from "next/link";
+import ActualisationTempsReel from "@/components/ActualisationTempsReel";
+import BadgeAnalyse from "@/components/BadgeAnalyse";
 import BadgeStatut from "@/components/BadgeStatut";
+import ImportFacturePdf from "@/components/ImportFacturePdf";
 import {
   aujourdhuiParis,
   COLONNES_FACTURE,
@@ -14,7 +17,10 @@ import { creerClientServeur } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
 
-type FactureAvecClient = Facture & { clients: { nom: string } | null };
+type FactureAvecClient = Facture & {
+  clients: { nom: string } | null;
+  client_detecte: string | null;
+};
 
 const FILTRES: StatutAffiche[] = ["en_retard", "en_attente", "payee", "brouillon"];
 
@@ -27,9 +33,13 @@ export default async function ListeFactures({
   const filtreActif = FILTRES.find((f) => f === filtre);
 
   const supabase = await creerClientServeur();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
   const { data, error } = await supabase
     .from("factures")
-    .select(`${COLONNES_FACTURE}, clients(nom)`)
+    .select(`${COLONNES_FACTURE}, clients(nom), client_detecte:donnees_extraites->>client_nom`)
     .order("created_at", { ascending: false });
 
   const aujourdhui = aujourdhuiParis();
@@ -39,11 +49,17 @@ export default async function ListeFactures({
 
   return (
     <main className="mx-auto max-w-5xl p-8">
+      {user && <ActualisationTempsReel userId={user.id} tables={["factures"]} />}
+
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-bold">Factures</h1>
-        <Link href="/factures/nouvelle" className="rounded bg-blue-600 px-4 py-2 text-white">
-          Saisir une facture
+        <Link href="/factures/nouvelle" className="rounded border px-4 py-2">
+          Saisir une facture à la main
         </Link>
+      </div>
+
+      <div className="mt-6 max-w-xl">
+        <ImportFacturePdf />
       </div>
 
       <nav className="mt-6 flex flex-wrap gap-2 text-sm">
@@ -90,11 +106,24 @@ export default async function ListeFactures({
                       {facture.numero ?? "Sans numéro"}
                     </Link>
                   </td>
-                  <td className="p-2">{facture.clients?.nom ?? "—"}</td>
+                  <td className="p-2">
+                    {facture.clients?.nom ??
+                      (facture.client_detecte ? (
+                        <span className="italic text-gray-500">
+                          {facture.client_detecte} (à créer)
+                        </span>
+                      ) : (
+                        "—"
+                      ))}
+                  </td>
                   <td className="p-2 text-right">{formaterMontant(facture.montant_ttc)}</td>
                   <td className="p-2">{formaterDate(facture.echeance)}</td>
                   <td className="p-2">
-                    <BadgeStatut statut={facture.affiche} />
+                    {facture.etat_analyse === "en_cours" || facture.etat_analyse === "erreur" ? (
+                      <BadgeAnalyse analyse={facture.etat_analyse} />
+                    ) : (
+                      <BadgeStatut statut={facture.affiche} />
+                    )}
                   </td>
                 </tr>
               ))}
