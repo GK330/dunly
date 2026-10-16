@@ -34,6 +34,7 @@ export default function TableauStatut() {
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState("");
   const [messageEmail, setMessageEmail] = useState("");
+  const [messageTest, setMessageTest] = useState("");
 
   function actualiser() {
     setChargement(true);
@@ -57,6 +58,16 @@ export default function TableauStatut() {
     }
   }
 
+  async function envoyerErreurTest() {
+    setMessageTest("Envoi…");
+    const reponse = await fetch("/api/admin/erreur-test", { method: "POST" });
+    setMessageTest(
+      reponse.status === 500
+        ? "Erreur de test envoyée : elle doit apparaître dans Sentry d’ici quelques secondes."
+        : `Réponse inattendue (statut ${reponse.status}).`
+    );
+  }
+
   useEffect(() => {
     recupererStatut()
       .then(setDonnees)
@@ -69,6 +80,9 @@ export default function TableauStatut() {
       <div className="flex items-center justify-between">
         <h1 className="text-3xl font-bold">Administration</h1>
         <div className="flex gap-2">
+          <button onClick={envoyerErreurTest} className="rounded border px-4 py-2 font-medium">
+            Envoyer une erreur de test
+          </button>
           <button onClick={envoyerEmailTest} className="rounded border px-4 py-2 font-medium">
             Envoyer un e-mail de test
           </button>
@@ -82,6 +96,7 @@ export default function TableauStatut() {
         </div>
       </div>
 
+      {messageTest && <p className="mt-2 text-sm text-gray-600">{messageTest}</p>}
       {messageEmail && <p className="mt-2 text-sm text-gray-600">{messageEmail}</p>}
 
       {erreur && (

@@ -1,7 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const CHEMINS_PUBLICS = ["/connexion", "/auth", "/api"];
+const CHEMINS_PUBLICS = ["/connexion", "/auth", "/api", "/monitoring"];
 
 export async function mettreAJourSession(request: NextRequest) {
   let reponse = NextResponse.next({ request });

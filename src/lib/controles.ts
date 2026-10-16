@@ -206,6 +206,104 @@ const controleEmail: Controle = {
   },
 };
 
+const controleSentry: Controle = {
+  service: "Sentry",
+  description: "Suivi des erreurs",
+  verifier: async () => {
+    const dsn = process.env.NEXT_PUBLIC_SENTRY_DSN;
+    if (!dsn) {
+      throw new Error("Variable NEXT_PUBLIC_SENTRY_DSN manquante : les erreurs ne sont pas collectées");
+    }
+
+    const adresse = new URL(dsn);
+    const environnement = process.env.VERCEL_ENV ?? "local";
+
+    return `DSN configuré · Envoi vers ${adresse.host} · Environnement : ${environnement}`;
+  },
+};
+
+const STATUTS_UPTIMEROBOT: Record<number, string> = {
+  0: "en pause",
+  1: "pas encore vérifié",
+  2: "opérationnel",
+  8: "probablement en panne",
+  9: "en panne",
+};
+
+const controleUptimeRobot: Controle = {
+  service: "UptimeRobot",
+  description: "Surveillance externe de disponibilité",
+  verifier: async () => {
+    const cle = process.env.UPTIMEROBOT_API_KEY;
+    if (!cle) {
+      throw new Error("Variable UPTIMEROBOT_API_KEY manquante");
+    }
+
+    const reponse = await fetch("https://api.uptimerobot.com/v2/getMonitors", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({
+        api_key: cle,
+        format: "json",
+        custom_uptime_ratios: "30",
+      }),
+      cache: "no-store",
+    });
+
+    const donnees = await reponse.json();
+
+    if (donnees.stat !== "ok") {
+      throw new Error(donnees.error?.message ?? "Réponse inattendue de l'API UptimeRobot");
+    }
+
+    const moniteur = donnees.monitors?.[0];
+    if (!moniteur) {
+      throw new Error("Aucun moniteur configuré");
+    }
+
+    const etat = STATUTS_UPTIMEROBOT[moniteur.status] ?? "statut inconnu";
+    if (moniteur.status === 8 || moniteur.status === 9) {
+      throw new Error(`Le moniteur « ${moniteur.friendly_name} » signale une panne`);
+    }
+
+    return `Moniteur ${etat} · Disponibilité sur 30 jours : ${moniteur.custom_uptime_ratio} %`;
+  },
+};
+
+const controleLangfuse: Controle = {
+  service: "Langfuse",
+  description: "Observabilité des appels au modèle d'IA",
+  verifier: async () => {
+    const baseUrl = process.env.LANGFUSE_BASE_URL;
+    const clePublique = process.env.LANGFUSE_PUBLIC_KEY;
+    const cleSecrete = process.env.LANGFUSE_SECRET_KEY;
+
+    if (!baseUrl || !clePublique || !cleSecrete) {
+      throw new Error("Variables Langfuse manquantes : les appels au modèle ne sont pas tracés");
+    }
+
+    const sante = await fetch(`${baseUrl}/api/public/health`, { cache: "no-store" });
+    if (!sante.ok) {
+      throw new Error(`Le service a répondu avec le statut ${sante.status}`);
+    }
+
+    const authentification = Buffer.from(`${clePublique}:${cleSecrete}`).toString("base64");
+    const projets = await fetch(`${baseUrl}/api/public/projects`, {
+      headers: { Authorization: `Basic ${authentification}` },
+      cache: "no-store",
+    });
+
+    if (!projets.ok) {
+      throw new Error(`Clés refusées (statut ${projets.status})`);
+    }
+
+    const donnees = await projets.json();
+    const nomProjet = donnees.data?.[0]?.name ?? "inconnu";
+
+    return `Service joignable · Projet « ${nomProjet} »`;
+  },
+};
+
 export const CONTROLES: Controle[] = [
   controleVercel,
   controleIA,
@@ -216,4 +314,7 @@ export const CONTROLES: Controle[] = [
   controleQStash,
   controleRealtime,
   controleEmail,
+  controleSentry,
+  controleUptimeRobot,
+  controleLangfuse,
 ];
