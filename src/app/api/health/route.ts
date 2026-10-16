@@ -11,7 +11,13 @@ export async function GET() {
     return Response.json({ statut: "indisponible" }, { status: 503, headers: ENTETES });
   }
 
-  const base = await executerControle(controleBase);
+  let base = await executerControle(controleBase);
+
+  // Premier appel après une période d'inactivité : le démarrage à froid de la fonction
+  // peut dépasser le délai du contrôle. Une seconde tentative évite une fausse alerte.
+  if (base.statut === "en_panne") {
+    base = await executerControle(controleBase);
+  }
   const disponible = base.statut !== "en_panne";
 
   return Response.json(
