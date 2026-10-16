@@ -1,5 +1,6 @@
 import Link from "next/link";
 import BoutonDeconnexion from "@/components/BoutonDeconnexion";
+import { estAdministrateur } from "@/lib/admin";
 import { creerClientServeur } from "@/lib/supabase/server";
 
 const LIENS = [{ href: "/", libelle: "Tableau de bord" }];
@@ -26,6 +27,11 @@ export default async function EnTete() {
               {lien.libelle}
             </Link>
           ))}
+          {estAdministrateur(user.email) && (
+            <Link href="/admin" className="text-gray-700 hover:underline">
+              Admin
+            </Link>
+          )}
         </nav>
         <div className="flex items-center gap-4">
           <span className="text-gray-600">{user.email}</span>
