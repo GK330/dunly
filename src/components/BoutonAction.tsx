@@ -15,9 +15,9 @@ type Props = {
 };
 
 const CLASSES = {
-  principal: "bg-blue-600 text-white",
-  secondaire: "border",
-  danger: "border border-red-300 text-red-700",
+  principal: "btn-primaire",
+  secondaire: "btn-secondaire",
+  danger: "btn-danger",
 };
 
 // Bouton qui appelle une route du back, puis rafraîchit la page ou redirige
@@ -71,7 +71,7 @@ export default function BoutonAction({
         type="button"
         onClick={executer}
         disabled={chargement}
-        className={`rounded px-4 py-2 text-sm font-medium disabled:opacity-50 ${CLASSES[variante]}`}
+        className={`btn ${CLASSES[variante]}`}
       >
         {chargement ? libelleEnCours : libelle}
       </button>

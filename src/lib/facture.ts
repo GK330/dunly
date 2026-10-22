@@ -38,8 +38,8 @@ export const LIMITES = {
 };
 
 export const LIBELLES_STATUT: Record<StatutAffiche, { libelle: string; classes: string }> = {
-  brouillon: { libelle: "À vérifier", classes: "bg-gray-100 text-gray-800" },
-  en_attente: { libelle: "En attente", classes: "bg-blue-100 text-blue-800" },
+  brouillon: { libelle: "À vérifier", classes: "bg-stone-100 text-stone-800" },
+  en_attente: { libelle: "En attente", classes: "bg-amber-100 text-amber-900" },
   en_retard: { libelle: "En retard", classes: "bg-red-100 text-red-800" },
   payee: { libelle: "Payée", classes: "bg-green-100 text-green-800" },
 };

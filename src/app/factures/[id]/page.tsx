@@ -5,6 +5,7 @@ import BadgeAnalyse from "@/components/BadgeAnalyse";
 import BadgeStatut from "@/components/BadgeStatut";
 import BoutonAction from "@/components/BoutonAction";
 import FormulaireFacture from "@/components/FormulaireFacture";
+import { LectureIAPanneau } from "@/components/LectureIA";
 import type { Extraction } from "@/lib/extraction";
 import {
   aujourdhuiParis,
@@ -64,43 +65,38 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
     facture.brouillon && !facture.client_id && extraction?.client_nom ? extraction : null;
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       {user && <ActualisationTempsReel userId={user.id} tables={["factures"]} />}
 
-      <Link href="/factures" className="text-blue-600 underline">
+      <Link href="/factures" className="lien">
         ← Retour aux factures
       </Link>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
-        <h1 className="text-3xl font-bold">Facture {facture.numero ?? "sans numéro"}</h1>
+        <h1 className="titre-page">Facture {facture.numero ?? "sans numéro"}</h1>
         <BadgeStatut statut={affiche} />
         {facture.etat_analyse && <BadgeAnalyse analyse={facture.etat_analyse} />}
       </div>
 
       {lienPdf && (
         <p className="mt-2 text-sm">
-          <a href={lienPdf} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+          <a href={lienPdf} target="_blank" rel="noopener noreferrer" className="lien">
             Ouvrir le PDF d’origine
           </a>
         </p>
       )}
 
-      {facture.etat_analyse === "en_cours" && (
-        <p className="mt-6 rounded border border-yellow-300 bg-yellow-50 p-3 text-yellow-800">
-          L’IA lit votre facture. Cette page se met à jour toute seule dès que la lecture est
-          terminée.
-        </p>
-      )}
+      {facture.etat_analyse === "en_cours" && <LectureIAPanneau />}
 
       {facture.etat_analyse === "erreur" && (
-        <p className="mt-6 rounded border border-red-300 bg-red-50 p-3 text-red-700">
+        <p className="mt-6 alerte alerte-erreur">
           La lecture du PDF a échoué : {facture.message_erreur ?? "erreur inconnue"} Vous pouvez
           compléter la facture à la main ci-dessous.
         </p>
       )}
 
       {!facture.brouillon && facture.etat_analyse === "prete" && extraction?.validee_automatiquement && (
-        <p className="mt-6 rounded border border-green-300 bg-green-50 p-3 text-green-800">
+        <p className="mt-6 alerte alerte-succes">
           Facture lue et validée automatiquement par l’IA, client compris. Vérifiez les
           informations ci-dessous et corrigez-les si besoin : aucune relance ne partira sans
           votre validation.
@@ -108,7 +104,7 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
       )}
 
       {facture.brouillon && facture.etat_analyse === "prete" && extraction && (
-        <div className="mt-6 rounded border border-blue-300 bg-blue-50 p-3 text-blue-900">
+        <div className="mt-6 alerte alerte-info">
           <p>
             Champs pré-remplis par l’IA : vérifiez-les, corrigez-les si besoin, puis validez la
             facture. Elle ne sera relancée qu’après validation.
@@ -128,36 +124,36 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
 
       <div className="mt-6 grid gap-8 md:grid-cols-[1fr_360px]">
         <section className="flex flex-col gap-4">
-          <dl className="grid grid-cols-2 gap-3 rounded-lg border p-4 text-sm">
-            <dt className="text-gray-500">Client</dt>
+          <dl className="carte grid grid-cols-2 gap-3 p-5 text-sm">
+            <dt className="text-stone-500">Client</dt>
             <dd>
               {facture.clients ? (
-                <Link href={`/clients/${facture.clients.id}`} className="text-blue-600 underline">
+                <Link href={`/clients/${facture.clients.id}`} className="lien">
                   {facture.clients.nom}
                 </Link>
               ) : (
                 "—"
               )}
             </dd>
-            <dt className="text-gray-500">Montant TTC</dt>
+            <dt className="text-stone-500">Montant TTC</dt>
             <dd className="font-medium">{formaterMontant(facture.montant_ttc)}</dd>
-            <dt className="text-gray-500">Émise le</dt>
+            <dt className="text-stone-500">Émise le</dt>
             <dd>{formaterDate(facture.emise_le)}</dd>
-            <dt className="text-gray-500">Échéance</dt>
+            <dt className="text-stone-500">Échéance</dt>
             <dd>
               {formaterDate(facture.echeance)}
               {retard > 0 && <span className="ml-2 text-red-700">({retard} jours de retard)</span>}
             </dd>
             {facture.payee_le && (
               <>
-                <dt className="text-gray-500">Payée le</dt>
+                <dt className="text-stone-500">Payée le</dt>
                 <dd>{new Date(facture.payee_le).toLocaleDateString("fr-FR")}</dd>
               </>
             )}
           </dl>
 
           {clientDetecte && (
-            <div className="rounded-lg border p-4 text-sm">
+            <div className="carte p-5 text-sm">
               <p>
                 Client détecté dans le PDF : <strong>{clientDetecte.client_nom}</strong>
                 {clientDetecte.client_email && <> ({clientDetecte.client_email})</>}. Il ne
@@ -201,7 +197,7 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
         <aside className="flex flex-col gap-4">
           {facture.etat_analyse !== "en_cours" && (
             <>
-              <h2 className="text-lg font-semibold">
+              <h2 className="font-titre text-lg font-semibold">
                 {facture.brouillon ? "Vérifier et valider" : "Modifier"}
               </h2>
               <FormulaireFacture

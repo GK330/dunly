@@ -40,28 +40,28 @@ export default async function DetailClient({ params }: { params: Promise<{ id: s
   const aujourdhui = aujourdhuiParis();
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
-      <Link href="/clients" className="text-blue-600 underline">
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
+      <Link href="/clients" className="lien">
         ← Retour aux clients
       </Link>
-      <h1 className="mt-4 text-3xl font-bold">{client.nom}</h1>
+      <h1 className="titre-page mt-4">{client.nom}</h1>
 
       <div className="mt-6 grid gap-8 md:grid-cols-[1fr_320px]">
         <section>
-          <h2 className="text-lg font-semibold">Factures</h2>
+          <h2 className="font-titre text-lg font-semibold">Factures</h2>
           {factures.length === 0 && (
-            <p className="mt-2 text-gray-600">Aucune facture pour ce client.</p>
+            <p className="mt-2 text-stone-600">Aucune facture pour ce client.</p>
           )}
           <ul className="mt-3 flex flex-col gap-2">
             {factures.map((facture) => (
               <li key={facture.id}>
                 <Link
                   href={`/factures/${facture.id}`}
-                  className="flex items-center justify-between rounded border p-3 hover:bg-gray-50"
+                  className="carte carte-lien flex items-center justify-between p-4"
                 >
                   <span>
                     <span className="font-medium">N° {facture.numero ?? "—"}</span>{" "}
-                    <span className="text-sm text-gray-500">
+                    <span className="text-sm text-stone-500">
                       · échéance {formaterDate(facture.echeance)}
                     </span>
                   </span>

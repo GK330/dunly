@@ -78,7 +78,7 @@ export default function FormulaireFacture({ clients, facture }: Props) {
 
   if (clients.length === 0) {
     return (
-      <p className="rounded border border-yellow-300 bg-yellow-50 p-3 text-yellow-800">
+      <p className="alerte alerte-attente">
         Ajoutez d’abord un client dans la page{" "}
         <Link href="/clients" className="font-medium underline">
           Clients
@@ -89,7 +89,7 @@ export default function FormulaireFacture({ clients, facture }: Props) {
   }
 
   return (
-    <form onSubmit={envoyer} className="flex flex-col gap-3 rounded-lg border p-4">
+    <form onSubmit={envoyer} className="carte flex flex-col gap-3 p-5">
       <div>
         <label htmlFor="client" className="block font-medium">
           Client
@@ -98,7 +98,7 @@ export default function FormulaireFacture({ clients, facture }: Props) {
           id="client"
           value={saisie.client_id}
           onChange={(e) => modifier("client_id", e.target.value)}
-          className="mt-1 w-full rounded border p-2"
+          className="champ mt-1"
         >
           <option value="">Choisissez un client…</option>
           {clients.map((client) => (
@@ -120,7 +120,7 @@ export default function FormulaireFacture({ clients, facture }: Props) {
             onChange={(e) => modifier("numero", e.target.value)}
             maxLength={LIMITES.numeroMax}
             placeholder="2026-042"
-            className="mt-1 w-full rounded border p-2"
+            className="champ mt-1"
           />
         </div>
         <div>
@@ -133,7 +133,7 @@ export default function FormulaireFacture({ clients, facture }: Props) {
             value={saisie.montant_ttc}
             onChange={(e) => modifier("montant_ttc", e.target.value)}
             placeholder="1200,00"
-            className="mt-1 w-full rounded border p-2"
+            className="champ mt-1"
           />
         </div>
         <div>
@@ -145,7 +145,7 @@ export default function FormulaireFacture({ clients, facture }: Props) {
             type="date"
             value={saisie.emise_le}
             onChange={(e) => modifier("emise_le", e.target.value)}
-            className="mt-1 w-full rounded border p-2"
+            className="champ mt-1"
           />
         </div>
         <div>
@@ -157,7 +157,7 @@ export default function FormulaireFacture({ clients, facture }: Props) {
             type="date"
             value={saisie.echeance}
             onChange={(e) => modifier("echeance", e.target.value)}
-            className="mt-1 w-full rounded border p-2"
+            className="champ mt-1"
           />
         </div>
       </div>
@@ -165,7 +165,7 @@ export default function FormulaireFacture({ clients, facture }: Props) {
       <button
         type="submit"
         disabled={!formulaireValide || chargement}
-        className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="btn btn-primaire"
       >
         {chargement
           ? "Enregistrement…"
@@ -177,10 +177,10 @@ export default function FormulaireFacture({ clients, facture }: Props) {
       </button>
 
       {erreur && (
-        <p className="rounded border border-red-300 bg-red-50 p-3 text-red-700">{erreur}</p>
+        <p className="alerte alerte-erreur">{erreur}</p>
       )}
       {succes && (
-        <p className="rounded border border-green-300 bg-green-50 p-3 text-green-800">{succes}</p>
+        <p className="alerte alerte-succes">{succes}</p>
       )}
     </form>
   );

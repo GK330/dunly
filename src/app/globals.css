@@ -1,19 +1,156 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* Direction artistique « Caisse » : papier blanc, mandarine, cacao */
+@theme {
+  --color-papier: #fffbf7;
+  --color-cacao: #3a2216;
+  --color-cacao-clair: #5c3725;
+  --color-mandarine: #f0611d;
+  --color-mandarine-fonce: #c2470f;
+  --color-abricot: #ffe8d7;
+  --color-grege: #eadfd4;
+  --color-brun: #7a6658;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
+  --font-titre: var(--font-bricolage), var(--font-instrument), ui-sans-serif, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-geist-sans), Arial, Helvetica, sans-serif;
+  background: var(--color-papier);
+  color: var(--color-cacao);
+  font-family: var(--font-sans);
+  font-feature-settings: "tnum" 1;
+}
+
+input[type="checkbox"] {
+  accent-color: var(--color-mandarine);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-mandarine);
+  outline-offset: 2px;
+}
+
+@layer components {
+  /* En-tête flottant : verre dépoli blanc, reflet et ombre douce */
+  .entete {
+    position: relative;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.82) 0%, rgb(255 255 255 / 0.62) 100%);
+    border: 1px solid rgb(234 223 212 / 0.75);
+    backdrop-filter: blur(18px) saturate(1.6);
+    -webkit-backdrop-filter: blur(18px) saturate(1.6);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.95),
+      0 1px 2px rgb(58 34 22 / 0.05),
+      0 14px 36px -16px rgb(58 34 22 / 0.3);
+  }
+
+  .entete::before {
+    content: "";
+    position: absolute;
+    inset: 1px 1px 55% 1px;
+    border-radius: 9999px 9999px 40% 40% / 9999px 9999px 100% 100%;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.7), rgb(255 255 255 / 0));
+    pointer-events: none;
+  }
+
+  .onglet-actif {
+    background: linear-gradient(180deg, #ff8a4c 0%, var(--color-mandarine) 60%, #e2540f 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.45),
+      0 4px 12px -4px rgb(240 97 29 / 0.7);
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .btn-primaire {
+    color: white;
+    background: linear-gradient(180deg, #ff8a4c 0%, var(--color-mandarine) 55%, #e2540f 100%);
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.45),
+      0 1px 2px rgb(58 34 22 / 0.25),
+      0 8px 18px -8px rgb(240 97 29 / 0.65);
+  }
+
+  .btn-primaire:hover:not(:disabled) {
+    filter: brightness(1.06);
+    transform: translateY(-1px);
+  }
+
+  .btn-secondaire {
+    @apply border border-grege bg-white text-cacao hover:bg-abricot/50;
+    box-shadow: 0 1px 2px rgb(58 34 22 / 0.06);
+  }
+
+  .btn-danger {
+    @apply border border-red-200 bg-white text-red-700 hover:bg-red-50;
+  }
+
+  .carte {
+    @apply rounded-2xl border border-grege bg-white;
+    box-shadow:
+      0 1px 2px rgb(58 34 22 / 0.04),
+      0 10px 28px -14px rgb(58 34 22 / 0.18);
+  }
+
+  .carte-lien {
+    @apply transition hover:-translate-y-0.5 hover:border-mandarine/40;
+  }
+
+  .champ {
+    @apply w-full rounded-xl border border-grege bg-white px-3 py-2 text-cacao transition placeholder:text-brun/60 focus:border-mandarine focus:ring-4 focus:ring-mandarine/15 focus:outline-none;
+  }
+
+  .lien {
+    @apply font-medium text-mandarine-fonce underline decoration-mandarine/30 underline-offset-4 hover:decoration-mandarine;
+  }
+
+  .titre-page {
+    @apply font-titre text-3xl font-bold tracking-tight text-cacao sm:text-4xl;
+  }
+
+  .alerte {
+    @apply rounded-xl border px-4 py-3 text-sm;
+  }
+
+  .alerte-erreur {
+    @apply border-red-200 bg-red-50 text-red-800;
+  }
+
+  .alerte-succes {
+    @apply border-emerald-200 bg-emerald-50 text-emerald-900;
+  }
+
+  .alerte-attente {
+    @apply border-amber-200 bg-amber-50 text-amber-900;
+  }
+
+  .alerte-info {
+    @apply border-mandarine/25 bg-abricot/60 text-cacao;
+  }
+
+  /* Ticket de caisse : bord inférieur dentelé, ombre qui suit la découpe */
+  .ticket-ombre {
+    filter: drop-shadow(0 12px 20px rgb(58 34 22 / 0.14));
+  }
+
+  .ticket {
+    --dent: 12px;
+    mask:
+      radial-gradient(circle at 50% 100%, transparent calc(var(--dent) * 0.45), #000 calc(var(--dent) * 0.45 + 0.5px))
+        bottom / var(--dent) var(--dent) repeat-x,
+      linear-gradient(#000, #000) top / 100% calc(100% - var(--dent) + 1px) no-repeat;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primaire:hover:not(:disabled),
+  .carte-lien:hover {
+    transform: none;
+  }
 }

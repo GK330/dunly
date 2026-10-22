@@ -17,7 +17,7 @@ export async function POST() {
     const redirection = lireRedirection();
     await envoyerEmail({
       destinataire: user.email,
-      sujet: "E-mail de test d'Encaisse",
+      sujet: "E-mail de test de Dunly",
       html: "<p>Si vous lisez ce message, l'envoi d'e-mails par Resend fonctionne.</p>",
       texte: "Si vous lisez ce message, l'envoi d'e-mails par Resend fonctionne.",
     });

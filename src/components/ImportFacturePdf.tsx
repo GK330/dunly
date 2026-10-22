@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import FileUpload, { type UploadHelpers } from "@/components/kokonutui/file-upload";
 import { creerClientNavigateur } from "@/lib/supabase/client";
 
 const TAILLE_MAX_PDF = 5 * 1024 * 1024;
@@ -22,110 +23,56 @@ async function deposerPdf(fichier: File): Promise<string> {
 
   if (error) {
     console.error(error);
-    throw new Error("L'envoi du fichier a échoué. Vérifiez qu'il s'agit d'un PDF de 5 Mo maximum.");
+    throw new Error("L’envoi du fichier a échoué. Vérifiez qu’il s’agit d’un PDF de 5 Mo maximum.");
   }
 
   return chemin;
 }
 
 export default function ImportFacturePdf() {
-  const [fichier, setFichier] = useState<File | null>(null);
-  const [cleFichier, setCleFichier] = useState(0);
-  const [chargement, setChargement] = useState(false);
-  const [etape, setEtape] = useState("");
-  const [erreur, setErreur] = useState("");
-  const [succes, setSucces] = useState("");
   const [restantes, setRestantes] = useState<number | null>(null);
 
-  const fichierValide =
-    fichier !== null && fichier.type === "application/pdf" && fichier.size <= TAILLE_MAX_PDF;
+  // Chaque PDF est déposé dans le dossier privé de l'utilisateur, puis confié à l'IA
+  async function envoyer(fichier: File, { onProgress, signal }: UploadHelpers) {
+    onProgress(10);
+    const cheminFichier = await deposerPdf(fichier);
+    if (signal.aborted) return;
 
-  async function envoyer(e: React.FormEvent) {
-    e.preventDefault();
-    if (!fichier) return;
+    onProgress(70);
+    const reponse = await fetch("/api/factures/import", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cheminFichier }),
+      signal,
+    });
+    const donnees = await reponse.json().catch(() => ({}));
 
-    setChargement(true);
-    setErreur("");
-    setSucces("");
+    const entete = reponse.headers.get("X-RateLimit-Remaining");
+    if (entete !== null) setRestantes(Number(entete));
 
-    try {
-      setEtape("Envoi du fichier…");
-      const cheminFichier = await deposerPdf(fichier);
-
-      setEtape("Enregistrement de la demande…");
-      const reponse = await fetch("/api/factures/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ cheminFichier }),
-      });
-      const donnees = await reponse.json();
-
-      const entete = reponse.headers.get("X-RateLimit-Remaining");
-      if (entete !== null) setRestantes(Number(entete));
-
-      if (!reponse.ok) {
-        setErreur(donnees.erreur ?? "Une erreur est survenue.");
-        return;
-      }
-
-      setFichier(null);
-      setCleFichier((cle) => cle + 1);
-      setSucces(
-        "Facture reçue : l’IA la lit en arrière-plan. Elle apparaît ci-dessous dès qu’elle est lue, avec son client et son statut."
-      );
-    } catch (err) {
-      setErreur(
-        err instanceof TypeError ? "Impossible de contacter le serveur." : (err as Error).message
-      );
-    } finally {
-      setChargement(false);
-      setEtape("");
+    if (!reponse.ok) {
+      throw new Error(donnees.erreur ?? "La lecture n’a pas pu être lancée.");
     }
+
+    onProgress(100);
   }
 
   return (
-    <form onSubmit={envoyer} className="flex flex-col gap-3 rounded-lg border p-4">
-      <label htmlFor="fichier" className="font-medium">
-        Déposer une facture PDF
-      </label>
-      <input
-        key={cleFichier}
-        id="fichier"
-        type="file"
-        accept="application/pdf"
-        onChange={(e) => setFichier(e.target.files?.[0] ?? null)}
-        className="block w-full text-sm"
+    <div>
+      <FileUpload
+        onUpload={envoyer}
+        acceptedFileTypes={["application/pdf"]}
+        maxFileSize={TAILLE_MAX_PDF}
+        maxFiles={5}
       />
-      <p
-        className={`text-sm ${fichier === null || fichierValide ? "text-gray-500" : "text-red-600"}`}
-      >
-        {fichier
-          ? `${fichier.name} (${(fichier.size / 1024 / 1024).toFixed(1)} Mo)`
-          : "PDF de 5 Mo maximum, contenant du texte sélectionnable"}
+      <p className="mt-2 text-sm text-brun">
+        L’IA lit chaque facture en arrière-plan : elle apparaît dans la liste ci-dessous dès
+        qu’elle est lue, avec son client et son statut.
+        {restantes !== null &&
+          (restantes > 0
+            ? ` Encore ${restantes} lecture(s) possible(s) cette heure-ci.`
+            : " Quota de lectures atteint pour cette heure-ci.")}
       </p>
-
-      <button
-        type="submit"
-        disabled={!fichierValide || chargement}
-        className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {chargement ? etape : "Lire la facture avec l’IA"}
-      </button>
-
-      {restantes !== null && (
-        <p className="text-sm text-gray-500">
-          {restantes > 0
-            ? `Il vous reste ${restantes} lecture(s) de PDF pour l'heure en cours.`
-            : "Vous avez utilisé tout votre quota de lectures pour l'heure en cours."}
-        </p>
-      )}
-
-      {erreur && (
-        <p className="rounded border border-red-300 bg-red-50 p-3 text-red-700">{erreur}</p>
-      )}
-      {succes && (
-        <p className="rounded border border-green-300 bg-green-50 p-3 text-green-800">{succes}</p>
-      )}
-    </form>
+    </div>
   );
 }

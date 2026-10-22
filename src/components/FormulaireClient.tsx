@@ -52,7 +52,7 @@ export default function FormulaireClient({ client }: Props) {
   }
 
   return (
-    <form onSubmit={envoyer} className="flex flex-col gap-3 rounded-lg border p-4">
+    <form onSubmit={envoyer} className="carte flex flex-col gap-3 p-5">
       <div>
         <label htmlFor="nom-client" className="block font-medium">
           Nom du client
@@ -63,7 +63,7 @@ export default function FormulaireClient({ client }: Props) {
           onChange={(e) => setNom(e.target.value)}
           maxLength={LIMITES.nomMax}
           placeholder="Exemple : Boulangerie Martin"
-          className="mt-1 w-full rounded border p-2"
+          className="champ mt-1"
         />
       </div>
 
@@ -78,24 +78,24 @@ export default function FormulaireClient({ client }: Props) {
           onChange={(e) => setEmail(e.target.value)}
           maxLength={LIMITES.emailMax}
           placeholder="compta@exemple.com"
-          className="mt-1 w-full rounded border p-2"
+          className="champ mt-1"
         />
-        <p className="mt-1 text-sm text-gray-500">Indispensable pour relancer ce client.</p>
+        <p className="mt-1 text-sm text-stone-500">Indispensable pour relancer ce client.</p>
       </div>
 
       <button
         type="submit"
         disabled={chargement || nom.trim() === ""}
-        className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:cursor-not-allowed disabled:opacity-50"
+        className="btn btn-primaire"
       >
         {chargement ? "Enregistrement…" : client ? "Enregistrer" : "Ajouter le client"}
       </button>
 
       {erreur && (
-        <p className="rounded border border-red-300 bg-red-50 p-3 text-red-700">{erreur}</p>
+        <p className="alerte alerte-erreur">{erreur}</p>
       )}
       {succes && (
-        <p className="rounded border border-green-300 bg-green-50 p-3 text-green-800">{succes}</p>
+        <p className="alerte alerte-succes">{succes}</p>
       )}
     </form>
   );

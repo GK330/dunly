@@ -7,11 +7,11 @@ export default async function NouvelleFacture() {
   const { data: clients } = await supabase.from("clients").select("id, nom").order("nom");
 
   return (
-    <main className="mx-auto max-w-2xl p-8">
-      <Link href="/factures" className="text-blue-600 underline">
+    <main className="mx-auto w-full max-w-2xl px-4 py-10 sm:px-6">
+      <Link href="/factures" className="lien">
         ← Retour aux factures
       </Link>
-      <h1 className="mt-4 text-3xl font-bold">Saisir une facture</h1>
+      <h1 className="titre-page mt-4">Saisir une facture</h1>
       <div className="mt-6">
         <FormulaireFacture clients={clients ?? []} />
       </div>

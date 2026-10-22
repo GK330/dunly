@@ -111,30 +111,30 @@ export default function TableauStatut() {
   const incidents = donnees?.historique.filter((e) => e.statutGlobal !== "operationnel") ?? [];
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Administration</h1>
+        <h1 className="titre-page">Administration</h1>
         <div className="flex gap-2">
-          <button onClick={envoyerErreurTest} className="rounded border px-4 py-2 font-medium">
+          <button onClick={envoyerErreurTest} className="btn btn-secondaire">
             Envoyer une erreur de test
           </button>
-          <button onClick={envoyerEmailTest} className="rounded border px-4 py-2 font-medium">
+          <button onClick={envoyerEmailTest} className="btn btn-secondaire">
             Envoyer un e-mail de test
           </button>
           <button
             onClick={actualiser}
             disabled={chargement}
-            className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:opacity-50"
+            className="btn btn-primaire"
           >
             {chargement ? "Vérification…" : "Relancer les tests"}
           </button>
         </div>
       </div>
 
-      {messageTest && <p className="mt-2 text-sm text-gray-600">{messageTest}</p>}
-      {messageEmail && <p className="mt-2 text-sm text-gray-600">{messageEmail}</p>}
+      {messageTest && <p className="mt-2 text-sm text-stone-600">{messageTest}</p>}
+      {messageEmail && <p className="mt-2 text-sm text-stone-600">{messageEmail}</p>}
 
-      <label className="mt-4 flex items-center gap-2 text-sm text-gray-600">
+      <label className="mt-4 flex items-center gap-2 text-sm text-stone-600">
         <input
           type="checkbox"
           checked={automatique}
@@ -144,7 +144,7 @@ export default function TableauStatut() {
       </label>
 
       {erreur && (
-        <p className="mt-6 rounded border border-red-300 bg-red-50 p-3 text-red-700">{erreur}</p>
+        <p className="mt-6 alerte alerte-erreur">{erreur}</p>
       )}
 
       {donnees && (
@@ -156,8 +156,8 @@ export default function TableauStatut() {
           </p>
 
           <section className="mt-6">
-            <h2 className="text-lg font-semibold">Historique des derniers contrôles</h2>
-            <p className="text-sm text-gray-500">Du plus récent (à gauche) au plus ancien</p>
+            <h2 className="font-titre text-lg font-semibold">Historique des derniers contrôles</h2>
+            <p className="text-sm text-stone-500">Du plus récent (à gauche) au plus ancien</p>
             <div className="mt-2 flex flex-wrap gap-1">
               {donnees.historique.map((entree) => (
                 <span
@@ -175,7 +175,7 @@ export default function TableauStatut() {
             {incidents.length > 0 && (
               <ul className="mt-3 flex flex-col gap-1 text-sm">
                 {incidents.slice(0, 5).map((entree) => (
-                  <li key={entree.date} className="text-gray-700">
+                  <li key={entree.date} className="text-stone-700">
                     <span className="font-medium">{heure(entree.date)}</span> ·{" "}
                     {[...entree.servicesEnPanne, ...entree.servicesDegrades].join(", ")}
                   </li>
@@ -184,39 +184,39 @@ export default function TableauStatut() {
             )}
           </section>
 
-          <div className="mt-6 overflow-x-auto">
+          <div className="carte mt-6 overflow-x-auto p-2">
             <table className="w-full border-collapse text-left text-sm">
               <thead>
-                <tr className="border-b">
-                  <th className="p-2">Service</th>
-                  <th className="p-2">Statut</th>
-                  <th className="p-2">Temps de réponse</th>
-                  <th className="p-2">Détail</th>
+                <tr className="border-b border-grege text-xs tracking-wide text-brun uppercase">
+                  <th className="px-3 py-2.5">Service</th>
+                  <th className="px-3 py-2.5">Statut</th>
+                  <th className="px-3 py-2.5">Temps de réponse</th>
+                  <th className="px-3 py-2.5">Détail</th>
                 </tr>
               </thead>
               <tbody>
                 {donnees.services.map((s) => (
-                  <tr key={s.service} className="border-b align-top">
-                    <td className="p-2">
+                  <tr key={s.service} className="border-b border-grege/70 align-top last:border-0">
+                    <td className="px-3 py-2.5">
                       <p className="font-medium">{s.service}</p>
-                      <p className="text-gray-500">{s.description}</p>
+                      <p className="text-stone-500">{s.description}</p>
                     </td>
-                    <td className="p-2">
+                    <td className="px-3 py-2.5">
                       <span
-                        className={`rounded px-2 py-1 text-xs font-medium ${AFFICHAGE[s.statut].classes}`}
+                        className={`rounded-full px-2.5 py-1 text-xs font-medium whitespace-nowrap ${AFFICHAGE[s.statut].classes}`}
                       >
                         {AFFICHAGE[s.statut].libelle}
                       </span>
                     </td>
-                    <td className="p-2">{s.latenceMs} ms</td>
-                    <td className="p-2 text-gray-700">{s.message}</td>
+                    <td className="px-3 py-2.5">{s.latenceMs} ms</td>
+                    <td className="p-2 text-stone-700">{s.message}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <p className="mt-4 text-sm text-gray-500">
+          <p className="mt-4 text-sm text-stone-500">
             Dernière vérification : {new Date(donnees.verifieLe).toLocaleString("fr-FR")}
           </p>
         </>

@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { redirect } from "next/navigation";
 import FormulaireConnexion from "@/components/FormulaireConnexion";
 import { creerClientServeur } from "@/lib/supabase/server";
@@ -19,13 +20,34 @@ export default async function Connexion({
   const { erreur } = await searchParams;
 
   return (
-    <main className="mx-auto max-w-md p-8">
-      <h1 className="text-3xl font-bold">Encaisse</h1>
-      <p className="mt-2 text-gray-600">
-        Vos factures relancées automatiquement, vos encaissements sous contrôle. Saisissez
-        votre adresse e-mail : vous recevrez un lien pour vous connecter, sans mot de passe.
-      </p>
-      <FormulaireConnexion erreurLien={erreur === "lien-invalide"} />
+    <main className="flex flex-1 items-center justify-center px-4 py-16">
+      <div className="w-full max-w-md">
+        <Image
+          src="/dunly-logo-favicons/dunly-logo.svg"
+          alt="Dunly"
+          width={1260}
+          height={345}
+          priority
+          unoptimized
+          className="h-11 w-auto"
+        />
+
+        <h1 className="mt-8 font-titre text-4xl leading-tight font-bold tracking-tight text-balance text-cacao">
+          Vos factures payées, <span className="text-mandarine-fonce">sans courir après.</span>
+        </h1>
+        <p className="mt-3 text-brun">
+          Déposez vos factures : Dunly relance vos clients en retard et vous dit ce que vous
+          pouvez vous verser.
+        </p>
+
+        <div className="carte mt-8 p-6">
+          <p className="font-medium text-cacao">Connexion sans mot de passe</p>
+          <p className="mt-1 text-sm text-brun">
+            Saisissez votre adresse e-mail : vous recevrez un lien pour vous connecter.
+          </p>
+          <FormulaireConnexion erreurLien={erreur === "lien-invalide"} />
+        </div>
+      </div>
     </main>
   );
 }

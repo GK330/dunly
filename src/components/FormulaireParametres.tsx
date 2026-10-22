@@ -55,7 +55,7 @@ export default function FormulaireParametres({ parametres }: Props) {
   }
 
   return (
-    <form onSubmit={envoyer} className="flex flex-col gap-4 rounded-lg border p-4">
+    <form onSubmit={envoyer} className="carte flex flex-col gap-4 p-5">
       <div>
         <label htmlFor="nom-affiche" className="block font-medium">
           Votre nom ou celui de votre activité
@@ -66,7 +66,7 @@ export default function FormulaireParametres({ parametres }: Props) {
           onChange={(e) => setNomAffiche(e.target.value)}
           maxLength={100}
           placeholder="Léa Martin – Graphiste"
-          className="mt-1 w-full rounded border p-2"
+          className="champ mt-1"
         />
       </div>
 
@@ -80,7 +80,7 @@ export default function FormulaireParametres({ parametres }: Props) {
           onChange={(e) => setSignature(e.target.value)}
           maxLength={500}
           placeholder={"Léa Martin\nGraphiste indépendante\n06 12 34 56 78"}
-          className="mt-1 h-28 w-full rounded border p-2"
+          className="champ mt-1 h-28"
         />
       </div>
 
@@ -93,9 +93,9 @@ export default function FormulaireParametres({ parametres }: Props) {
           inputMode="decimal"
           value={taux}
           onChange={(e) => setTaux(e.target.value)}
-          className="mt-1 w-40 rounded border p-2"
+          className="champ mt-1 w-40"
         />
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 text-sm text-stone-500">
           Part de chaque encaissement à mettre de côté. Vérifiez le taux qui correspond à votre
           activité sur le site de l’URSSAF.
         </p>
@@ -104,16 +104,16 @@ export default function FormulaireParametres({ parametres }: Props) {
       <button
         type="submit"
         disabled={chargement}
-        className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:opacity-50"
+        className="btn btn-primaire"
       >
         {chargement ? "Enregistrement…" : "Enregistrer"}
       </button>
 
       {erreur && (
-        <p className="rounded border border-red-300 bg-red-50 p-3 text-red-700">{erreur}</p>
+        <p className="alerte alerte-erreur">{erreur}</p>
       )}
       {succes && (
-        <p className="rounded border border-green-300 bg-green-50 p-3 text-green-800">{succes}</p>
+        <p className="alerte alerte-succes">{succes}</p>
       )}
     </form>
   );

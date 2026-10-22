@@ -37,7 +37,7 @@ export async function envoyerEmail(email: Email): Promise<string | undefined> {
     throw new Error("La variable RESEND_API_KEY n'est pas définie.");
   }
 
-  const expediteur = process.env.EMAIL_EXPEDITEUR || "Encaisse <onboarding@resend.dev>";
+  const expediteur = process.env.EMAIL_EXPEDITEUR || "Dunly <onboarding@resend.dev>";
   const redirection = lireRedirection();
 
   if (redirection.bloque) {

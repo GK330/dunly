@@ -3,6 +3,7 @@ import ActualisationTempsReel from "@/components/ActualisationTempsReel";
 import BadgeAnalyse from "@/components/BadgeAnalyse";
 import BadgeStatut from "@/components/BadgeStatut";
 import ImportFacturePdf from "@/components/ImportFacturePdf";
+import { LectureIALigne } from "@/components/LectureIA";
 import {
   aujourdhuiParis,
   COLONNES_FACTURE,
@@ -48,12 +49,12 @@ export default async function ListeFactures({
     .filter((facture) => !filtreActif || facture.affiche === filtreActif);
 
   return (
-    <main className="mx-auto max-w-5xl p-8">
+    <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       {user && <ActualisationTempsReel userId={user.id} tables={["factures"]} />}
 
       <div className="flex flex-wrap items-center justify-between gap-4">
-        <h1 className="text-3xl font-bold">Factures</h1>
-        <Link href="/factures/nouvelle" className="rounded border px-4 py-2">
+        <h1 className="titre-page">Factures</h1>
+        <Link href="/factures/nouvelle" className="btn btn-secondaire">
           Saisir une facture à la main
         </Link>
       </div>
@@ -65,7 +66,7 @@ export default async function ListeFactures({
       <nav className="mt-6 flex flex-wrap gap-2 text-sm">
         <Link
           href="/factures"
-          className={`rounded px-3 py-1 ${!filtreActif ? "bg-blue-600 text-white" : "border"}`}
+          className={`rounded-full px-3 py-1 ${!filtreActif ? "onglet-actif text-white" : "border border-grege bg-white hover:bg-abricot/50"}`}
         >
           Toutes
         </Link>
@@ -73,7 +74,7 @@ export default async function ListeFactures({
           <Link
             key={f}
             href={`/factures?filtre=${f}`}
-            className={`rounded px-3 py-1 ${filtreActif === f ? "bg-blue-600 text-white" : "border"}`}
+            className={`rounded-full px-3 py-1 ${filtreActif === f ? "onglet-actif text-white" : "border border-grege bg-white hover:bg-abricot/50"}`}
           >
             {LIBELLES_STATUT[f].libelle}
           </Link>
@@ -83,43 +84,45 @@ export default async function ListeFactures({
       {error && <p className="mt-6 text-red-700">Impossible de charger les factures.</p>}
 
       {!error && factures.length === 0 && (
-        <p className="mt-6 text-gray-600">Aucune facture pour l’instant.</p>
+        <p className="mt-6 text-stone-600">Aucune facture pour l’instant.</p>
       )}
 
       {factures.length > 0 && (
-        <div className="mt-6 overflow-x-auto">
-          <table className="w-full border-collapse text-left text-sm">
+        <div className="carte mt-6 overflow-x-auto p-2">
+          <table className="w-full min-w-[640px] border-collapse text-left text-sm">
             <thead>
-              <tr className="border-b">
-                <th className="p-2">Numéro</th>
-                <th className="p-2">Client</th>
-                <th className="p-2 text-right">Montant TTC</th>
-                <th className="p-2">Échéance</th>
-                <th className="p-2">Statut</th>
+              <tr className="border-b border-grege text-xs tracking-wide text-brun uppercase">
+                <th className="px-3 py-2.5">Numéro</th>
+                <th className="px-3 py-2.5">Client</th>
+                <th className="px-3 py-2.5 text-right">Montant TTC</th>
+                <th className="px-3 py-2.5">Échéance</th>
+                <th className="px-3 py-2.5">Statut</th>
               </tr>
             </thead>
             <tbody>
               {factures.map((facture) => (
-                <tr key={facture.id} className="border-b hover:bg-gray-50">
-                  <td className="p-2">
-                    <Link href={`/factures/${facture.id}`} className="font-medium text-blue-600 underline">
+                <tr key={facture.id} className="border-b border-grege/70 last:border-0 hover:bg-abricot/30">
+                  <td className="px-3 py-2.5">
+                    <Link href={`/factures/${facture.id}`} className="lien font-mono whitespace-nowrap">
                       {facture.numero ?? "Sans numéro"}
                     </Link>
                   </td>
-                  <td className="p-2">
+                  <td className="px-3 py-2.5">
                     {facture.clients?.nom ??
                       (facture.client_detecte ? (
-                        <span className="italic text-gray-500">
+                        <span className="italic text-stone-500">
                           {facture.client_detecte} (à créer)
                         </span>
                       ) : (
                         "—"
                       ))}
                   </td>
-                  <td className="p-2 text-right">{formaterMontant(facture.montant_ttc)}</td>
-                  <td className="p-2">{formaterDate(facture.echeance)}</td>
-                  <td className="p-2">
-                    {facture.etat_analyse === "en_cours" || facture.etat_analyse === "erreur" ? (
+                  <td className="px-3 py-2.5 text-right">{formaterMontant(facture.montant_ttc)}</td>
+                  <td className="px-3 py-2.5">{formaterDate(facture.echeance)}</td>
+                  <td className="px-3 py-2.5">
+                    {facture.etat_analyse === "en_cours" ? (
+                      <LectureIALigne />
+                    ) : facture.etat_analyse === "erreur" ? (
                       <BadgeAnalyse analyse={facture.etat_analyse} />
                     ) : (
                       <BadgeStatut statut={facture.affiche} />

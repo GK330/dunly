@@ -1,5 +1,7 @@
+import Image from "next/image";
 import Link from "next/link";
 import BoutonDeconnexion from "@/components/BoutonDeconnexion";
+import NavPrincipale from "@/components/NavPrincipale";
 import SentryUtilisateur from "@/components/SentryUtilisateur";
 import { estAdministrateur } from "@/lib/admin";
 import { creerClientServeur } from "@/lib/supabase/server";
@@ -21,27 +23,44 @@ export default async function EnTete() {
     return null;
   }
 
+  const liens = estAdministrateur(user.email)
+    ? [...LIENS, { href: "/admin", libelle: "Admin" }]
+    : LIENS;
+
   return (
-    <header className="border-b">
+    <header className="sticky top-3 z-40 px-4">
       <SentryUtilisateur id={user.id} />
-      <div className="mx-auto flex max-w-5xl flex-wrap items-center justify-between gap-4 p-4 text-sm">
-        <nav className="flex flex-wrap items-center gap-4">
-          <Link href="/" className="font-semibold">
-            Encaisse
-          </Link>
-          {LIENS.map((lien) => (
-            <Link key={lien.href} href={lien.href} className="text-gray-700 hover:underline">
-              {lien.libelle}
-            </Link>
-          ))}
-          {estAdministrateur(user.email) && (
-            <Link href="/admin" className="text-gray-700 hover:underline">
-              Admin
-            </Link>
-          )}
-        </nav>
-        <div className="flex items-center gap-4">
-          <span className="text-gray-600">{user.email}</span>
+      <div className="entete mx-auto flex max-w-6xl items-center gap-3 rounded-full py-2 pr-2 pl-3">
+        <Link href="/" aria-label="Dunly, tableau de bord" className="relative flex shrink-0 items-center pl-1">
+          {/* Logo complet sur grand écran, le « D » seul sur mobile */}
+          <Image
+            src="/dunly-logo-favicons/dunly-logo.svg"
+            alt="Dunly"
+            width={1260}
+            height={345}
+            priority
+            unoptimized
+            className="hidden h-7 w-auto sm:block"
+          />
+          <Image
+            src="/dunly-logo-favicons/favicon/favicon.svg"
+            alt="Dunly"
+            width={330}
+            height={330}
+            priority
+            unoptimized
+            className="size-8 sm:hidden"
+          />
+        </Link>
+
+        <div className="relative min-w-0 flex-1">
+          <NavPrincipale liens={liens} />
+        </div>
+
+        <div className="relative flex shrink-0 items-center gap-3">
+          <span className="hidden max-w-48 truncate text-sm text-brun lg:inline">
+            {user.email}
+          </span>
           <BoutonDeconnexion />
         </div>
       </div>

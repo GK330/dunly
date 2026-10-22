@@ -35,7 +35,7 @@ export default function FormulaireConnexion({ erreurLien }: { erreurLien: boolea
 
   if (envoye) {
     return (
-      <p className="mt-6 rounded border border-green-300 bg-green-50 p-4 text-green-800">
+      <p className="mt-6 alerte alerte-succes">
         Un lien de connexion vient d’être envoyé à <strong>{email}</strong>. Ouvrez-le
         dans ce même navigateur.
       </p>
@@ -55,20 +55,20 @@ export default function FormulaireConnexion({ erreurLien }: { erreurLien: boolea
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           placeholder="vous@exemple.com"
-          className="mt-1 w-full rounded border p-2"
+          className="champ mt-1"
         />
       </div>
 
       <button
         type="submit"
         disabled={envoi || email === ""}
-        className="rounded bg-blue-600 px-4 py-2 font-medium text-white disabled:opacity-50"
+        className="btn btn-primaire"
       >
         {envoi ? "Envoi en cours…" : "Recevoir un lien de connexion"}
       </button>
 
       {erreur && (
-        <p className="rounded border border-red-300 bg-red-50 p-3 text-red-700">{erreur}</p>
+        <p className="alerte alerte-erreur">{erreur}</p>
       )}
     </form>
   );
