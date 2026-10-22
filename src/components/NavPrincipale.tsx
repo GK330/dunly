@@ -11,7 +11,7 @@ export default function NavPrincipale({ liens }: { liens: Lien[] }) {
   const chemin = usePathname();
 
   function estActif(href: string) {
-    return href === "/" ? chemin === "/" : chemin.startsWith(href);
+    return chemin.startsWith(href);
   }
 
   return (

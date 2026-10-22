@@ -7,7 +7,7 @@ import { estAdministrateur } from "@/lib/admin";
 import { creerClientServeur } from "@/lib/supabase/server";
 
 const LIENS = [
-  { href: "/", libelle: "Tableau de bord" },
+  { href: "/tableau-de-bord", libelle: "Tableau de bord" },
   { href: "/factures", libelle: "Factures" },
   { href: "/clients", libelle: "Clients" },
   { href: "/parametres", libelle: "Paramètres" },
@@ -31,7 +31,7 @@ export default async function EnTete() {
     <header className="sticky top-3 z-40 px-4">
       <SentryUtilisateur id={user.id} />
       <div className="entete mx-auto flex max-w-6xl items-center gap-3 rounded-full py-2 pr-2 pl-3">
-        <Link href="/" aria-label="Dunly, tableau de bord" className="relative flex shrink-0 items-center pl-1">
+        <Link href="/tableau-de-bord" aria-label="Dunly, tableau de bord" className="relative flex shrink-0 items-center pl-1">
           {/* Logo complet sur grand écran, le « D » seul sur mobile */}
           <Image
             src="/dunly-logo-favicons/dunly-logo.svg"

@@ -31,7 +31,8 @@ export async function mettreAJourSession(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   const chemin = request.nextUrl.pathname;
-  const cheminPublic = CHEMINS_PUBLICS.some((prefixe) => chemin.startsWith(prefixe));
+  const cheminPublic =
+    chemin === "/" || CHEMINS_PUBLICS.some((prefixe) => chemin.startsWith(prefixe));
 
   if (!user && !cheminPublic) {
     const url = request.nextUrl.clone();

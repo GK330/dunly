@@ -14,7 +14,7 @@ export default async function Connexion({
   } = await supabase.auth.getUser();
 
   if (user) {
-    redirect("/");
+    redirect("/tableau-de-bord");
   }
 
   const { erreur } = await searchParams;
