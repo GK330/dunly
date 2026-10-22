@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { entetesQuota, limiteurAnalyses, verifierQuota } from "@/lib/limitation";
 import { estCheminPdfValide } from "@/lib/pdf";
 import { publierTache } from "@/lib/qstash";
 import { reponseErreurBase, reponseNonConnecte } from "@/lib/reponses-api";
@@ -32,7 +33,24 @@ export async function POST(request: Request) {
     return reponseErreurBase(erreur, "Erreur lors de la lecture de la demande d'import");
   }
 
-  // 2. Enregistrement d'un brouillon, avec le statut d'analyse « en cours »
+  // 2. Vérification du quota de l'utilisateur, avant tout appel coûteux au modèle d'IA
+  const quota = await verifierQuota(limiteurAnalyses, user.id);
+  const enTetesQuota = entetesQuota(quota);
+
+  if (!quota.autorise) {
+    const minutes = Math.ceil(quota.secondesAvantReinitialisation / 60);
+    return Response.json(
+      {
+        erreur: `Vous avez atteint votre quota de ${quota.limite} lectures de PDF par heure. Réessayez dans ${minutes} minute(s), ou saisissez la facture à la main.`,
+      },
+      {
+        status: 429,
+        headers: { ...enTetesQuota, "Retry-After": String(quota.secondesAvantReinitialisation) },
+      }
+    );
+  }
+
+  // 3. Enregistrement d'un brouillon, avec le statut d'analyse « en cours »
   const { data: facture, error } = await supabase
     .from("factures")
     .insert({ brouillon: true, etat_analyse: "en_cours", fichier_chemin: cheminFichier })
@@ -47,7 +65,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Publication du message de lecture dans la file
+  // 4. Publication du message de lecture dans la file
   try {
     await publierTache(
       "/api/jobs/analyser-facture",
@@ -70,6 +88,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // 4. Réponse immédiate : la lecture se poursuit en arrière-plan
-  return Response.json(facture, { status: 202 });
+  // 5. Réponse immédiate : la lecture se poursuit en arrière-plan
+  return Response.json(facture, { status: 202, headers: enTetesQuota });
 }

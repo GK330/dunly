@@ -1,6 +1,6 @@
 import "server-only";
 import { lireRedirection } from "@/lib/email";
-import { redis } from "@/lib/limitation";
+import { QUOTA_ANALYSES, redis } from "@/lib/limitation";
 import { qstash } from "@/lib/qstash";
 import type { Controle } from "@/lib/statut";
 import { creerClientAdmin } from "@/lib/supabase/admin";
@@ -116,7 +116,7 @@ const controleRedis: Controle = {
     }
 
     const nombreCles = await redis.dbsize();
-    return `Base joignable · ${nombreCles} clé(s) en mémoire`;
+    return `Base joignable · ${nombreCles} clé(s) · Quota : ${QUOTA_ANALYSES} lectures de PDF par heure et par utilisateur`;
   },
 };
 
