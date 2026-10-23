@@ -12,6 +12,7 @@ import {
   type Client,
   type Facture,
 } from "@/lib/facture";
+import { scoreDeRisque, type StatistiquesClient } from "@/lib/relances";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { estUuid } from "@/lib/validation";
 
@@ -30,11 +31,21 @@ export default async function DetailClient({ params }: { params: Promise<{ id: s
     notFound();
   }
 
-  const { data } = await supabase
-    .from("factures")
-    .select(COLONNES_FACTURE)
-    .eq("client_id", id)
-    .order("emise_le", { ascending: false });
+  const [{ data }, { data: statistiques }] = await Promise.all([
+    supabase
+      .from("factures")
+      .select(COLONNES_FACTURE)
+      .eq("client_id", id)
+      .order("emise_le", { ascending: false }),
+    // Historique calculé en SQL par la vue statistiques_clients
+    supabase
+      .from("statistiques_clients")
+      .select("nombre_factures, nombre_retards, retard_moyen_jours")
+      .eq("client_id", id)
+      .maybeSingle<StatistiquesClient>(),
+  ]);
+
+  const risque = statistiques ? scoreDeRisque(statistiques) : null;
 
   const factures = (data ?? []) as Facture[];
   const aujourdhui = aujourdhuiParis();
@@ -44,7 +55,31 @@ export default async function DetailClient({ params }: { params: Promise<{ id: s
       <Link href="/clients" className="lien">
         ← Retour aux clients
       </Link>
-      <h1 className="titre-page mt-4">{client.nom}</h1>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <h1 className="titre-page">{client.nom}</h1>
+        {risque && (
+          <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${risque.classes}`}>
+            {risque.libelle}
+          </span>
+        )}
+      </div>
+
+      {statistiques && (
+        <dl className="carte mt-4 grid max-w-xl grid-cols-3 gap-3 p-5 text-sm">
+          <div>
+            <dt className="text-stone-500">Factures</dt>
+            <dd className="font-titre text-xl font-semibold">{statistiques.nombre_factures}</dd>
+          </div>
+          <div>
+            <dt className="text-stone-500">Retards</dt>
+            <dd className="font-titre text-xl font-semibold">{statistiques.nombre_retards}</dd>
+          </div>
+          <div>
+            <dt className="text-stone-500">Retard moyen</dt>
+            <dd className="font-titre text-xl font-semibold">{statistiques.retard_moyen_jours} j</dd>
+          </div>
+        </dl>
+      )}
 
       <div className="mt-6 grid gap-8 md:grid-cols-[1fr_320px]">
         <section>

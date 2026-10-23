@@ -1,6 +1,7 @@
 import { COLONNES_FACTURE } from "@/lib/facture";
 import { reponseErreurBase, reponseIntrouvable, reponseNonConnecte } from "@/lib/reponses-api";
 import { creerClientServeur } from "@/lib/supabase/server";
+import { preparerRelanceImmediate } from "@/lib/tournee-relances";
 import { ErreurValidation, estUuid, lireCorps } from "@/lib/validation";
 
 type Contexte = { params: Promise<{ id: string }> };
@@ -44,6 +45,21 @@ export async function POST(request: Request, { params }: Contexte) {
     if (error) throw error;
     if (!data) {
       throw new ErreurValidation("Cette facture a déjà ce statut, ou n'est pas encore validée.");
+    }
+
+    // Une facture payée arrête immédiatement toutes ses relances en attente d'envoi.
+    // Le worker d'envoi revérifie en plus le statut de la facture juste avant d'envoyer.
+    if (payee) {
+      const { error: erreurRelances } = await supabase
+        .from("relances")
+        .update({ statut: "annulee" })
+        .eq("facture_id", id)
+        .in("statut", ["brouillon", "validee"]);
+
+      if (erreurRelances) throw erreurRelances;
+    } else {
+      // Paiement marqué par erreur : si la facture est en retard, sa relance revient
+      preparerRelanceImmediate(id);
     }
 
     return Response.json(data);

@@ -2,10 +2,12 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import ActualisationTempsReel from "@/components/ActualisationTempsReel";
 import BadgeAnalyse from "@/components/BadgeAnalyse";
+import BadgeRelance from "@/components/BadgeRelance";
 import BadgeStatut from "@/components/BadgeStatut";
 import BoutonAction from "@/components/BoutonAction";
 import FormulaireFacture from "@/components/FormulaireFacture";
 import { LectureIAPanneau } from "@/components/LectureIA";
+import type { Relance } from "@/lib/contexte-relance";
 import type { Extraction } from "@/lib/extraction";
 import {
   aujourdhuiParis,
@@ -16,12 +18,15 @@ import {
   statutAffiche,
   type Facture,
 } from "@/lib/facture";
+import { LIBELLES_NIVEAU } from "@/lib/relances";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { estUuid } from "@/lib/validation";
 
 type FactureDetaillee = Facture & {
   fichier_chemin: string | null;
   donnees_extraites: (Extraction & { validee_automatiquement?: boolean }) | null;
+  relances_arretees: boolean;
+  relances_en_pause_jusqu_au: string | null;
   clients: { id: string; nom: string; email: string | null } | null;
 };
 
@@ -36,7 +41,9 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
 
   const { data } = await supabase
     .from("factures")
-    .select(`${COLONNES_FACTURE}, fichier_chemin, donnees_extraites, clients(id, nom, email)`)
+    .select(
+      `${COLONNES_FACTURE}, fichier_chemin, donnees_extraites, relances_arretees, relances_en_pause_jusqu_au, clients(id, nom, email)`
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -46,7 +53,18 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
     notFound();
   }
 
-  const { data: clients } = await supabase.from("clients").select("id, nom").order("nom");
+  const [{ data: clients }, { data: donneesRelances }] = await Promise.all([
+    supabase.from("clients").select("id, nom").order("nom"),
+    supabase
+      .from("relances")
+      .select("id, niveau, statut, prevue_le, envoyee_le")
+      .eq("facture_id", id)
+      .order("created_at", { ascending: false }),
+  ]);
+  const relances = (donneesRelances ?? []) as Pick<
+    Relance,
+    "id" | "niveau" | "statut" | "prevue_le" | "envoyee_le"
+  >[];
 
   // URL signée valable cinq minutes : le bucket reste privé
   let lienPdf: string | null = null;
@@ -61,12 +79,14 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
   const affiche = statutAffiche(facture, aujourdhui);
   const retard = joursDeRetard(facture, aujourdhui);
   const extraction = facture.donnees_extraites;
+  const relancesEnPause =
+    !!facture.relances_en_pause_jusqu_au && facture.relances_en_pause_jusqu_au >= aujourdhui;
   const clientDetecte =
     facture.brouillon && !facture.client_id && extraction?.client_nom ? extraction : null;
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
-      {user && <ActualisationTempsReel userId={user.id} tables={["factures"]} />}
+      {user && <ActualisationTempsReel userId={user.id} tables={["factures", "relances"]} />}
 
       <Link href="/factures" className="lien">
         ← Retour aux factures
@@ -189,6 +209,68 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
                   confirmation="Annuler le paiement de cette facture ? Les relances pourront reprendre."
                   variante="secondaire"
                 />
+              )}
+            </div>
+          )}
+
+          {!facture.brouillon && (
+            <div className="carte p-5">
+              <h2 className="font-titre text-lg font-semibold">Relances</h2>
+
+              {facture.relances_arretees && (
+                <p className="mt-2 text-sm text-red-700">Relances arrêtées pour cette facture.</p>
+              )}
+              {!facture.relances_arretees && relancesEnPause && (
+                <p className="mt-2 text-sm text-brun">
+                  Relances en pause jusqu’au {formaterDate(facture.relances_en_pause_jusqu_au)}{" "}
+                  inclus.
+                </p>
+              )}
+
+              {relances.length === 0 ? (
+                <p className="mt-2 text-sm text-stone-600">
+                  Aucune relance. La première est préparée dès le 3ᵉ jour de retard, et vous êtes
+                  prévenu par e-mail.
+                </p>
+              ) : (
+                <ul className="mt-3 flex flex-col gap-2 text-sm">
+                  {relances.map((relance) => (
+                    <li key={relance.id} className="flex flex-wrap items-center justify-between gap-2">
+                      <Link href={`/relances/${relance.id}`} className="lien">
+                        Niveau {relance.niveau} · {LIBELLES_NIVEAU[relance.niveau]}
+                      </Link>
+                      <span className="flex items-center gap-2 text-stone-600">
+                        {relance.envoyee_le
+                          ? `envoyée le ${new Date(relance.envoyee_le).toLocaleDateString("fr-FR")}`
+                          : `prévue le ${formaterDate(relance.prevue_le)}`}
+                        <BadgeRelance statut={relance.statut} />
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              )}
+
+              {facture.statut === "en_attente" && (
+                <div className="mt-4">
+                  {facture.relances_arretees || relancesEnPause ? (
+                    <BoutonAction
+                      url={`/api/factures/${facture.id}/relances`}
+                      corps={{ action: "reprendre" }}
+                      libelle="Reprendre les relances"
+                      libelleEnCours="Enregistrement…"
+                      variante="secondaire"
+                    />
+                  ) : (
+                    <BoutonAction
+                      url={`/api/factures/${facture.id}/relances`}
+                      corps={{ action: "arreter" }}
+                      libelle="Arrêter les relances"
+                      libelleEnCours="Enregistrement…"
+                      confirmation="Arrêter définitivement les relances de cette facture ?"
+                      variante="danger"
+                    />
+                  )}
+                </div>
               )}
             </div>
           )}

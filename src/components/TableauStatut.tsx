@@ -54,6 +54,7 @@ export default function TableauStatut() {
   const [erreur, setErreur] = useState("");
   const [messageTest, setMessageTest] = useState("");
   const [messageEmail, setMessageEmail] = useState("");
+  const [messageTournee, setMessageTournee] = useState("");
   const [automatique, setAutomatique] = useState(true);
 
   const appliquer = useCallback((promesse: Promise<ReponseStatut>) => {
@@ -108,13 +109,29 @@ export default function TableauStatut() {
     }
   }
 
+  async function piloterTournee(action: "planifier" | "lancer") {
+    setMessageTournee("Envoi…");
+    try {
+      const reponse = await fetch("/api/admin/relances", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action }),
+      });
+      const donnees = await reponse.json();
+      setMessageTournee(donnees.message ?? donnees.erreur ?? `Statut ${reponse.status}`);
+      if (reponse.ok && action === "planifier") actualiser();
+    } catch {
+      setMessageTournee("Impossible de contacter le serveur.");
+    }
+  }
+
   const incidents = donnees?.historique.filter((e) => e.statutGlobal !== "operationnel") ?? [];
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-10 sm:px-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="titre-page">Administration</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <button onClick={envoyerErreurTest} className="btn btn-secondaire">
             Envoyer une erreur de test
           </button>
@@ -133,6 +150,17 @@ export default function TableauStatut() {
 
       {messageTest && <p className="mt-2 text-sm text-stone-600">{messageTest}</p>}
       {messageEmail && <p className="mt-2 text-sm text-stone-600">{messageEmail}</p>}
+
+      <div className="carte mt-4 flex flex-wrap items-center gap-2 p-4 text-sm">
+        <span className="font-medium">Relances :</span>
+        <button onClick={() => piloterTournee("planifier")} className="btn btn-secondaire">
+          Planifier la tournée quotidienne
+        </button>
+        <button onClick={() => piloterTournee("lancer")} className="btn btn-secondaire">
+          Lancer la tournée maintenant
+        </button>
+        {messageTournee && <span className="text-stone-600">{messageTournee}</span>}
+      </div>
 
       <label className="mt-4 flex items-center gap-2 text-sm text-stone-600">
         <input
