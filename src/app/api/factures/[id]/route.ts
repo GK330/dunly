@@ -2,6 +2,7 @@ import { COLONNES_FACTURE } from "@/lib/facture";
 import { reponseErreurBase, reponseIntrouvable, reponseNonConnecte } from "@/lib/reponses-api";
 import { lireSaisieFacture } from "@/lib/saisie-facture";
 import { creerClientServeur } from "@/lib/supabase/server";
+import { preparerRelanceImmediate } from "@/lib/tournee-relances";
 import { ErreurValidation, estUuid, lireCorps } from "@/lib/validation";
 
 type Contexte = { params: Promise<{ id: string }> };
@@ -48,6 +49,9 @@ export async function PATCH(request: Request, { params }: Contexte) {
       .single();
 
     if (error) throw error;
+
+    // Facture validée et déjà en retard : sa relance est préparée tout de suite
+    preparerRelanceImmediate(id);
 
     return Response.json(data);
   } catch (erreur) {

@@ -10,6 +10,7 @@ const LIENS = [
   { href: "/tableau-de-bord", libelle: "Tableau de bord" },
   { href: "/factures", libelle: "Factures" },
   { href: "/clients", libelle: "Clients" },
+  { href: "/relances", libelle: "Relances" },
   { href: "/parametres", libelle: "Paramètres" },
 ];
 

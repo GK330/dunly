@@ -35,6 +35,11 @@ export async function PUT(request: Request) {
     }
     const taux_cotisations = Math.round(pourcentage * 100) / 10000;
 
+    if (typeof corps.validation_relances !== "boolean") {
+      throw new ErreurValidation("Réglage de validation des relances invalide.");
+    }
+    const validation_relances = corps.validation_relances;
+
     // 2. Une seule ligne par utilisateur : création ou mise à jour
     const { data, error } = await supabase
       .from("parametres")
@@ -43,6 +48,7 @@ export async function PUT(request: Request) {
         nom_affiche,
         signature,
         taux_cotisations,
+        validation_relances,
         updated_at: new Date().toISOString(),
       })
       .select(COLONNES_PARAMETRES)

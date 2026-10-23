@@ -4,6 +4,7 @@ import { QUOTA_ANALYSES, redis } from "@/lib/limitation";
 import { qstash } from "@/lib/qstash";
 import type { Controle } from "@/lib/statut";
 import { creerClientAdmin } from "@/lib/supabase/admin";
+import { ID_PLANIFICATION, ROUTE_TOURNEE } from "@/lib/tournee-relances";
 
 const controleVercel: Controle = {
   service: "Vercel",
@@ -139,6 +140,36 @@ const controleQStash: Controle = {
     await qstash.schedules.list();
 
     return `Service joignable · Destination : ${process.env.APP_URL}`;
+  },
+};
+
+const controleTournee: Controle = {
+  service: "Tournée des relances",
+  description: "Planification quotidienne QStash des relances",
+  verifier: async () => {
+    const destination = `${process.env.APP_URL}${ROUTE_TOURNEE}`;
+
+    let planification;
+    try {
+      planification = await qstash.schedules.get(ID_PLANIFICATION);
+    } catch {
+      throw new Error("Aucune planification : cliquez sur « Planifier la tournée quotidienne »");
+    }
+
+    if (planification.destination !== destination) {
+      throw new Error(`La planification livre ${planification.destination} au lieu de ${destination}`);
+    }
+
+    if (planification.isPaused) {
+      throw new Error("La planification est en pause : aucune relance ne sera préparée");
+    }
+
+    const { count } = await creerClientAdmin()
+      .from("relances")
+      .select("id", { count: "exact", head: true })
+      .eq("statut", "brouillon");
+
+    return `Cron « ${planification.cron} » (UTC) · ${count ?? 0} relance(s) en attente de validation`;
   },
 };
 
@@ -415,6 +446,7 @@ export const CONTROLES: Controle[] = [
   controleStockage,
   controleRedis,
   controleQStash,
+  controleTournee,
   controleRealtime,
   controleEmail,
   controleSentry,

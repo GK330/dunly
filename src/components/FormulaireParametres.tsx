@@ -8,6 +8,7 @@ type Props = {
     nom_affiche: string;
     signature: string;
     taux_cotisations: number;
+    validation_relances: boolean;
   };
 };
 
@@ -18,6 +19,7 @@ export default function FormulaireParametres({ parametres }: Props) {
   const [taux, setTaux] = useState(
     String(Math.round(parametres.taux_cotisations * 10000) / 100).replace(".", ",")
   );
+  const [validationRelances, setValidationRelances] = useState(parametres.validation_relances);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState("");
   const [succes, setSucces] = useState("");
@@ -36,6 +38,7 @@ export default function FormulaireParametres({ parametres }: Props) {
           nom_affiche: nomAffiche,
           signature,
           taux_cotisations: taux,
+          validation_relances: validationRelances,
         }),
       });
       const donnees = await reponse.json();
@@ -100,6 +103,25 @@ export default function FormulaireParametres({ parametres }: Props) {
           activité sur le site de l’URSSAF.
         </p>
       </div>
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="font-medium">Relances</legend>
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={validationRelances}
+            onChange={(e) => setValidationRelances(e.target.checked)}
+            className="mt-1 size-4 accent-mandarine"
+          />
+          <span>
+            Valider chaque relance avant son envoi
+            <span className="block text-sm text-stone-500">
+              Activé : rien ne part sans votre validation. Désactivé : la relance part
+              automatiquement le jour prévu, après l’e-mail qui vous prévient.
+            </span>
+          </span>
+        </label>
+      </fieldset>
 
       <button
         type="submit"

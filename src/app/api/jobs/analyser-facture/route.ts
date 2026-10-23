@@ -5,6 +5,7 @@ import { estReessayable, messageErreurIA } from "@/lib/ia";
 import { extraireTextePdf } from "@/lib/pdf";
 import { NOMBRE_REESSAIS, verifierSignatureQStash } from "@/lib/qstash";
 import { creerClientAdmin, type ClientAdmin } from "@/lib/supabase/admin";
+import { preparerRelanceImmediate } from "@/lib/tournee-relances";
 import { estUuid } from "@/lib/validation";
 
 export const maxDuration = 60;
@@ -132,6 +133,11 @@ async function traiter(request: Request) {
     }
 
     if (error) throw error;
+
+    // Facture validée et déjà en retard : sa relance est préparée tout de suite
+    if (fiable) {
+      preparerRelanceImmediate(facture.id);
+    }
 
     return Response.json({ resultat: fiable ? "validée" : "à vérifier" });
   } catch (erreur) {

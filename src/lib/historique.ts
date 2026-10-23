@@ -2,7 +2,8 @@ import "server-only";
 import { PREFIXE_REDIS, redis } from "@/lib/limitation";
 import type { EntreeHistorique, ResultatControle, Statut } from "@/lib/statut";
 
-const CLE = `${PREFIXE_REDIS}:admin:historique`;
+// Un historique par environnement : le local et la production partagent la même base Redis
+const CLE = `${PREFIXE_REDIS}:admin:historique:${process.env.VERCEL_ENV ?? "local"}`;
 const TAILLE_MAX = 50;
 
 export async function enregistrerControle(statutGlobal: Statut, services: ResultatControle[]) {
