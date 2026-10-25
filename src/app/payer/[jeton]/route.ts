@@ -1,19 +1,11 @@
 import * as Sentry from "@sentry/nextjs";
-import { Ratelimit } from "@upstash/ratelimit";
 import { NextResponse } from "next/server";
-import { PREFIXE_REDIS, redis } from "@/lib/limitation";
+import { limiteurLiensPaiement, verifierQuota } from "@/lib/limitation";
 import { lireParametres } from "@/lib/parametres";
 import { creerClientStripe, FORMAT_JETON, type EtatPaiement } from "@/lib/stripe";
 import { creerClientAdmin } from "@/lib/supabase/admin";
 
 export const dynamic = "force-dynamic";
-
-// Chaque ouverture du lien crée une session Stripe : on limite les abus (robots, rafraîchissements)
-const limiteurLiens = new Ratelimit({
-  redis,
-  limiter: Ratelimit.slidingWindow(10, "1 h"),
-  prefix: `${PREFIXE_REDIS}:liens-paiement`,
-});
 
 // Lien de paiement envoyé au client dans les relances : /payer/<jeton>.
 // Le jeton est aléatoire et non devinable ; ce n'est jamais l'identifiant de la facture.
@@ -29,12 +21,9 @@ export async function GET(request: Request, { params }: { params: Promise<{ jeto
     return rediriger("introuvable");
   }
 
-  try {
-    const quota = await limiteurLiens.limit(jeton);
-    if (!quota.success) return rediriger("trop-de-tentatives");
-  } catch (erreur) {
-    console.error("Limitation de débit indisponible :", erreur);
-  }
+  // Chaque ouverture crée une session Stripe : on limite les abus (robots, rafraîchissements)
+  const quota = await verifierQuota(limiteurLiensPaiement, jeton);
+  if (!quota.autorise) return rediriger("trop-de-tentatives");
 
   // Lien public, sans session : client administrateur, strictement filtré par le jeton
   const supabase = creerClientAdmin();

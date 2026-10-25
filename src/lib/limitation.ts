@@ -9,13 +9,34 @@ export const redis = Redis.fromEnv();
 export const PREFIXE_REDIS = "encaisse";
 
 // Chaque appel au modèle d'IA consomme le quota partagé du fournisseur :
-// chaque utilisateur dispose de sa propre part, sur une fenêtre glissante d'une heure
+// chaque utilisateur dispose de sa propre part, sur une fenêtre glissante.
 export const QUOTA_ANALYSES = 10;
+export const QUOTA_RELANCES = 30;
+export const QUOTA_CLASSIFICATIONS = 50;
 
 export const limiteurAnalyses = new Ratelimit({
   redis,
   limiter: Ratelimit.slidingWindow(QUOTA_ANALYSES, "1 h"),
   prefix: `${PREFIXE_REDIS}:analyses`,
+});
+
+export const limiteurRelances = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(QUOTA_RELANCES, "1 d"),
+  prefix: `${PREFIXE_REDIS}:relances`,
+});
+
+export const limiteurClassifications = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(QUOTA_CLASSIFICATIONS, "1 d"),
+  prefix: `${PREFIXE_REDIS}:classifications`,
+});
+
+// Chaque ouverture d'un lien de paiement crée une session Stripe : on limite les abus
+export const limiteurLiensPaiement = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(10, "1 h"),
+  prefix: `${PREFIXE_REDIS}:liens-paiement`,
 });
 
 export type ResultatQuota = {
