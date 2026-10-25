@@ -6,7 +6,7 @@ import { Redis } from "@upstash/redis";
 export const redis = Redis.fromEnv();
 
 // Toutes les clés de l'application commencent par ce préfixe
-export const PREFIXE_REDIS = "encaisse";
+export const PREFIXE_REDIS = "dunly";
 
 // Chaque appel au modèle d'IA consomme le quota partagé du fournisseur :
 // chaque utilisateur dispose de sa propre part, sur une fenêtre glissante.
