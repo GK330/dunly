@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import DialogueConfirmation from "@/components/DialogueConfirmation";
 
 type Props = {
   url: string;
@@ -10,6 +12,7 @@ type Props = {
   libelle: string;
   libelleEnCours?: string;
   confirmation?: string;
+  succes?: string;
   redirection?: string;
   variante?: "principal" | "secondaire" | "danger";
 };
@@ -20,7 +23,8 @@ const CLASSES = {
   danger: "btn-danger",
 };
 
-// Bouton qui appelle une route du back, puis rafraîchit la page ou redirige
+// Bouton qui appelle une route du back, puis rafraîchit la page ou redirige.
+// Confirmation dans une fenêtre de Dunly, résultat annoncé par un toast.
 export default function BoutonAction({
   url,
   methode = "POST",
@@ -28,18 +32,18 @@ export default function BoutonAction({
   libelle,
   libelleEnCours = "Patientez…",
   confirmation,
+  succes,
   redirection,
   variante = "principal",
 }: Props) {
   const router = useRouter();
   const [chargement, setChargement] = useState(false);
-  const [erreur, setErreur] = useState("");
+  const [confirmationOuverte, setConfirmationOuverte] = useState(false);
+  const fermerConfirmation = useCallback(() => setConfirmationOuverte(false), []);
 
   async function executer() {
-    if (confirmation && !window.confirm(confirmation)) return;
-
+    setConfirmationOuverte(false);
     setChargement(true);
-    setErreur("");
 
     try {
       const reponse = await fetch(url, {
@@ -50,32 +54,44 @@ export default function BoutonAction({
       const donnees = await reponse.json().catch(() => ({}));
 
       if (!reponse.ok) {
-        setErreur(donnees.erreur ?? "Une erreur est survenue.");
+        toast.error(donnees.erreur ?? "Une erreur est survenue.");
         return;
       }
+
+      toast.success(succes ?? donnees.message ?? "C’est fait.");
 
       if (redirection) {
         router.push(redirection);
       }
       router.refresh();
     } catch {
-      setErreur("Impossible de contacter le serveur.");
+      toast.error("Impossible de contacter le serveur.");
     } finally {
       setChargement(false);
     }
   }
 
   return (
-    <div>
+    <>
       <button
         type="button"
-        onClick={executer}
+        onClick={() => (confirmation ? setConfirmationOuverte(true) : executer())}
         disabled={chargement}
         className={`btn ${CLASSES[variante]}`}
       >
         {chargement ? libelleEnCours : libelle}
       </button>
-      {erreur && <p className="mt-2 text-sm text-red-700">{erreur}</p>}
-    </div>
+      {confirmation && (
+        <DialogueConfirmation
+          ouvert={confirmationOuverte}
+          titre={`${libelle} ?`}
+          message={confirmation}
+          libelleConfirmer={libelle}
+          danger={variante === "danger"}
+          onConfirmer={executer}
+          onAnnuler={fermerConfirmation}
+        />
+      )}
+    </>
   );
 }

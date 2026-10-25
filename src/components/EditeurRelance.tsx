@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -15,13 +16,11 @@ export default function EditeurRelance({ relanceId, contenu, balises }: Props) {
   const [texte, setTexte] = useState(contenu);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState("");
-  const [succes, setSucces] = useState("");
 
   async function enregistrer(e: React.FormEvent) {
     e.preventDefault();
     setChargement(true);
     setErreur("");
-    setSucces("");
 
     try {
       const reponse = await fetch(`/api/relances/${relanceId}`, {
@@ -36,7 +35,7 @@ export default function EditeurRelance({ relanceId, contenu, balises }: Props) {
         return;
       }
 
-      setSucces("Texte enregistré : l’aperçu est à jour.");
+      toast.success("Texte enregistré : l’aperçu est à jour.");
       router.refresh();
     } catch {
       setErreur("Impossible de contacter le serveur.");
@@ -71,9 +70,6 @@ export default function EditeurRelance({ relanceId, contenu, balises }: Props) {
       </button>
       {erreur && (
         <p className="alerte alerte-erreur">{erreur}</p>
-      )}
-      {succes && (
-        <p className="alerte alerte-succes">{succes}</p>
       )}
     </form>
   );

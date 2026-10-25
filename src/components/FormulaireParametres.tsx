@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 
 type Props = {
@@ -24,13 +25,11 @@ export default function FormulaireParametres({ parametres }: Props) {
   const [paiementCarte, setPaiementCarte] = useState(parametres.paiement_carte_actif);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState("");
-  const [succes, setSucces] = useState("");
 
   async function envoyer(e: React.FormEvent) {
     e.preventDefault();
     setChargement(true);
     setErreur("");
-    setSucces("");
 
     try {
       const reponse = await fetch("/api/parametres", {
@@ -51,7 +50,7 @@ export default function FormulaireParametres({ parametres }: Props) {
         return;
       }
 
-      setSucces("Paramètres enregistrés.");
+      toast.success("Paramètres enregistrés.");
       router.refresh();
     } catch {
       setErreur("Impossible de contacter le serveur.");
@@ -151,9 +150,6 @@ export default function FormulaireParametres({ parametres }: Props) {
 
       {erreur && (
         <p className="alerte alerte-erreur">{erreur}</p>
-      )}
-      {succes && (
-        <p className="alerte alerte-succes">{succes}</p>
       )}
     </form>
   );

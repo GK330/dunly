@@ -117,7 +117,8 @@ export default async function DetailClient({ params }: { params: Promise<{ id: s
             methode="DELETE"
             libelle="Supprimer ce client"
             libelleEnCours="Suppression…"
-            confirmation={`Supprimer définitivement le client « ${client.nom} » ?`}
+            confirmation={`Le client « ${client.nom} » sera supprimé définitivement.`}
+            succes="Client supprimé."
             redirection="/clients"
             variante="danger"
           />
