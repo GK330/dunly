@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Bricolage_Grotesque, Geist_Mono, Instrument_Sans } from "next/font/google";
 import EnTete from "@/components/EnTete";
 import Mouvement from "@/components/Mouvement";
+import Notifications from "@/components/Notifications";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -38,6 +39,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         <Mouvement>
           <EnTete />
           {children}
+          <Notifications />
         </Mouvement>
       </body>
     </html>

@@ -211,6 +211,7 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
                 <BoutonAction
                   url={`/api/factures/${facture.id}/client-detecte`}
                   libelle="Créer ce client"
+                  succes="Client créé et rattaché à la facture."
                   libelleEnCours="Création…"
                   variante="secondaire"
                 />
@@ -226,7 +227,8 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
                   corps={{ statut: "payee" }}
                   libelle="Marquer payée"
                   libelleEnCours="Enregistrement…"
-                  confirmation="Marquer cette facture comme payée ? Toutes les relances seront arrêtées."
+                  confirmation="La facture passe en payée et toutes ses relances en attente sont annulées."
+                  succes="Facture marquée payée."
                 />
               ) : (
                 <BoutonAction
@@ -234,7 +236,8 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
                   corps={{ statut: "en_attente" }}
                   libelle="Remettre en attente"
                   libelleEnCours="Enregistrement…"
-                  confirmation="Annuler le paiement de cette facture ? Les relances pourront reprendre."
+                  confirmation="Le paiement est annulé : si la facture est en retard, ses relances reprennent."
+                  succes="Facture remise en attente."
                   variante="secondaire"
                 />
               )}
@@ -285,6 +288,7 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
                       url={`/api/factures/${facture.id}/relances`}
                       corps={{ action: "reprendre" }}
                       libelle="Reprendre les relances"
+                      succes="Relances reprises."
                       libelleEnCours="Enregistrement…"
                       variante="secondaire"
                     />
@@ -294,7 +298,8 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
                       corps={{ action: "arreter" }}
                       libelle="Arrêter les relances"
                       libelleEnCours="Enregistrement…"
-                      confirmation="Arrêter définitivement les relances de cette facture ?"
+                      confirmation="Plus aucune relance ne sera envoyée pour cette facture. Vous pourrez les reprendre plus tard."
+                      succes="Relances arrêtées."
                       variante="danger"
                     />
                   )}
@@ -333,7 +338,8 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
             methode="DELETE"
             libelle="Supprimer la facture"
             libelleEnCours="Suppression…"
-            confirmation="Supprimer définitivement cette facture, son PDF et ses relances ?"
+            confirmation="La facture, son PDF et ses relances seront supprimés définitivement."
+            succes="Facture supprimée."
             redirection="/factures"
             variante="danger"
           />

@@ -76,18 +76,18 @@ export default async function DetailRelance({ params }: { params: Promise<{ id: 
         </p>
       ) : (
         <div className="mt-6 grid gap-8 md:grid-cols-2">
-          <section>
+          <section className="min-w-0">
             <h2 className="font-titre text-lg font-semibold">Aperçu de l’e-mail</h2>
             {relance.origine_contenu && (
               <p className="text-sm text-stone-500">{ORIGINES[relance.origine_contenu]}</p>
             )}
             <div className="mt-3 carte p-5 text-sm">
               <p className="font-medium">Objet : {apercu?.sujet}</p>
-              <pre className="mt-3 whitespace-pre-wrap font-sans text-stone-800">{apercu?.texte}</pre>
+              <pre className="mt-3 whitespace-pre-wrap font-sans [overflow-wrap:anywhere] text-stone-800">{apercu?.texte}</pre>
             </div>
           </section>
 
-          <section className="flex flex-col gap-4">
+          <section className="flex min-w-0 flex-col gap-4">
             {modifiable && (
               <>
                 <div className="flex flex-wrap gap-2">
@@ -95,13 +95,15 @@ export default async function DetailRelance({ params }: { params: Promise<{ id: 
                     url={`/api/relances/${relance.id}/envoyer`}
                     libelle="Valider et envoyer maintenant"
                     libelleEnCours="Envoi…"
-                    confirmation={`Envoyer cette relance à ${facture.clients?.nom ?? "votre client"} maintenant ?`}
+                    confirmation={`La relance part tout de suite à ${facture.clients?.nom ?? "votre client"}${facture.clients?.email ? ` (${facture.clients.email})` : ""}.`}
+                    succes="Relance validée : elle part dans quelques secondes."
                   />
                   {relance.statut === "brouillon" ? (
                     <BoutonAction
                       url={`/api/relances/${relance.id}/statut`}
                       corps={{ statut: "validee" }}
                       libelle={`Valider pour le ${formaterDate(relance.prevue_le)}`}
+                      succes="Relance validée."
                       libelleEnCours="Validation…"
                       variante="secondaire"
                     />
@@ -110,6 +112,7 @@ export default async function DetailRelance({ params }: { params: Promise<{ id: 
                       url={`/api/relances/${relance.id}/statut`}
                       corps={{ statut: "brouillon" }}
                       libelle="Retirer la validation"
+                      succes="Validation retirée."
                       libelleEnCours="Enregistrement…"
                       variante="secondaire"
                     />
@@ -119,7 +122,8 @@ export default async function DetailRelance({ params }: { params: Promise<{ id: 
                     corps={{ statut: "annulee" }}
                     libelle="Annuler cette relance"
                     libelleEnCours="Annulation…"
-                    confirmation="Annuler cette relance ? Elle ne sera pas envoyée."
+                    confirmation="Cette relance ne sera pas envoyée."
+                    succes="Relance annulée."
                     variante="danger"
                   />
                 </div>

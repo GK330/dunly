@@ -6,85 +6,22 @@ import {
   ChatCircleText,
   Check,
   CreditCard,
-  FilePdf,
   GlobeHemisphereWest,
+  HandGrabbing,
   HandHeart,
   Lock,
-  PaperPlaneTilt,
   ShieldCheck,
   Sparkle,
 } from "@phosphor-icons/react/ssr";
 import Apparition from "@/components/Apparition";
-import ShapeHero, { type HeroShape } from "@/components/kokonutui/shape-hero";
+import Fonctionnement from "@/components/accueil/Fonctionnement";
+import Globe from "@/components/accueil/Globe";
+import { VILLES } from "@/components/accueil/villes";
+import Tarifs from "@/components/accueil/Tarifs";
+import TitreLettres from "@/components/accueil/TitreLettres";
 import { creerClientServeur } from "@/lib/supabase/server";
 
 const PAGE_STATUT = "https://stats.uptimerobot.com/BFFIWRvpQ7";
-
-// Étiquettes de factures qui tombent dans le hero et qu'on peut lancer à la souris
-const GRANDE = "h-11 px-5 text-base font-medium tracking-tight sm:h-14 sm:px-7 sm:text-lg";
-const PETITE = "h-10 px-4 text-sm font-medium sm:h-12 sm:px-5 sm:text-base";
-const BLANCHE = "border border-grege bg-white text-cacao";
-
-const FORMES: HeroShape[] = [
-  {
-    id: "payee",
-    content: (
-      <span className="flex items-center gap-2">
-        <Check weight="bold" className="size-5" aria-hidden /> Payée
-      </span>
-    ),
-    className: `${GRANDE} bg-emerald-600 text-white`,
-  },
-  { id: "montant", content: "800,00 €", className: `${GRANDE} onglet-actif text-white` },
-  {
-    id: "relance",
-    content: (
-      <span className="flex items-center gap-2">
-        <PaperPlaneTilt weight="duotone" className="size-5 text-mandarine" aria-hidden /> Relance
-        envoyée
-      </span>
-    ),
-    className: `${GRANDE} ${BLANCHE}`,
-  },
-  { id: "point-1", className: "size-12 bg-cacao sm:size-16" },
-  { id: "numero", content: "F2026-042", className: `${PETITE} ${BLANCHE} font-mono` },
-  { id: "retard", content: "En retard · 15 j", className: `${PETITE} border border-red-200 bg-white text-red-700` },
-  { id: "urssaf", content: "URSSAF 24,6 %", className: `${PETITE} bg-abricot text-mandarine-fonce` },
-  { id: "point-2", className: "size-10 onglet-actif sm:size-12" },
-  {
-    id: "lu",
-    content: (
-      <span className="flex items-center gap-2">
-        <Sparkle weight="duotone" className="size-5 text-mandarine" aria-hidden /> Lue par l’IA
-      </span>
-    ),
-    className: `${PETITE} ${BLANCHE}`,
-  },
-  { id: "verser", content: "À vous verser : 603 €", className: `${GRANDE} bg-cacao text-white` },
-  { id: "promesse", content: "Promesse de paiement", className: `${PETITE} bg-abricot text-mandarine-fonce` },
-  { id: "point-3", className: "size-8 bg-emerald-600 sm:size-10" },
-];
-
-const ETAPES = [
-  {
-    icone: FilePdf,
-    titre: "Déposez vos factures",
-    texte:
-      "Glissez vos PDF : l’IA relève le client, le montant et l’échéance. Vous vérifiez d’un coup d’œil.",
-  },
-  {
-    icone: PaperPlaneTilt,
-    titre: "Dunly relance pour vous",
-    texte:
-      "À J+3, J+15 puis J+30, une relance adaptée au client est préparée. Elle part quand vous la validez.",
-  },
-  {
-    icone: CreditCard,
-    titre: "Vous encaissez",
-    texte:
-      "Votre client paie par carte depuis le lien de la relance. La facture passe en payée, les relances s’arrêtent.",
-  },
-];
 
 const ATOUTS = [
   {
@@ -134,6 +71,9 @@ function EnTetePublic() {
           <a href="#atouts" className="rounded-full px-3 py-1.5 text-brun transition hover:bg-abricot/50 hover:text-cacao">
             Pourquoi Dunly
           </a>
+          <a href="#tarifs" className="rounded-full px-3 py-1.5 text-brun transition hover:bg-abricot/50 hover:text-cacao">
+            Tarifs
+          </a>
         </nav>
         <div className="relative ml-auto flex items-center gap-2">
           <Link href="/connexion" className="hidden rounded-full px-3 py-1.5 text-sm font-medium text-cacao transition hover:bg-abricot/50 sm:block">
@@ -163,61 +103,59 @@ export default async function Accueil() {
     <div className="flex flex-col">
       <EnTetePublic />
 
-      <ShapeHero
-        className="-mt-16 min-h-[920px] sm:min-h-[840px]"
-        eyebrow={
-          <span className="inline-flex items-center gap-2 rounded-full border border-grege bg-white/80 px-3 py-1 text-sm text-brun shadow-sm">
-            <Sparkle weight="duotone" className="size-4 text-mandarine" aria-hidden />
-            Pour les indépendants qui détestent relancer
-          </span>
-        }
-        title={
-          <>
-            Vos factures payées, <span className="text-mandarine-fonce">sans courir après.</span>
-          </>
-        }
-        description="Déposez vos factures en PDF. Dunly repère les retards, prépare des relances adaptées à chaque client et vous dit ce que vous pouvez vous verser."
-        actions={
-          <>
-            <Link href="/connexion" className="btn btn-primaire px-6 py-3 text-base">
-              Commencer gratuitement
-              <ArrowRight weight="bold" className="size-4" aria-hidden />
-            </Link>
-            <a href="#fonctionnement" className="btn btn-secondaire px-6 py-3 text-base">
-              Voir comment ça marche
-            </a>
-          </>
-        }
-        shapes={FORMES}
-        fill={0.28}
-      />
+      <section className="relative -mt-20 overflow-hidden pt-28 pb-16 sm:pb-20">
+        {/* Fond : halo mandarine et trame de points qui s'estompe */}
+        <div aria-hidden className="pointer-events-none absolute inset-0">
+          <div className="absolute -top-40 left-1/2 h-[560px] w-[900px] -translate-x-1/2 rounded-full bg-mandarine/15 blur-3xl" />
+          <div className="absolute inset-0 bg-[radial-gradient(var(--color-grege)_1px,transparent_1px)] [mask-image:radial-gradient(ellipse_at_top,black_30%,transparent_75%)] [background-size:22px_22px]" />
+        </div>
 
-      <section id="fonctionnement" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 py-20 sm:px-6">
+        <div className="relative mx-auto grid max-w-6xl items-center gap-x-10 gap-y-6 px-4 sm:px-6">
+          <div className="text-center lg:text-left">
+            <Apparition>
+              <span className="inline-flex items-center gap-2 rounded-full border border-grege bg-white/80 px-3 py-1 text-sm text-brun shadow-sm">
+                <Sparkle weight="duotone" className="size-4 text-mandarine" aria-hidden />
+                Pour les indépendants qui détestent relancer
+              </span>
+            </Apparition>
+            <TitreLettres
+              texte="Dunly"
+              className="mt-3 -ml-[0.04em] font-titre text-[clamp(6rem,27vw,13.5rem)] leading-[0.85] font-extrabold tracking-[-0.06em] text-cacao select-none lg:text-[clamp(8rem,15vw,13.5rem)]"
+            />
+            <Apparition delai={0.7}>
+              <h2 className="mt-5 font-titre text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+                Vos factures payées, <span className="text-mandarine-fonce">sans courir après.</span>
+              </h2>
+              <p className="mx-auto mt-4 max-w-xl text-lg text-brun lg:mx-0">
+                Déposez vos factures en PDF. Dunly repère les retards, prépare des relances
+                adaptées à chaque client, encaisse par carte et vous dit ce que vous pouvez vous
+                verser.
+              </p>
+              <div className="mt-7 flex flex-wrap justify-center gap-3 lg:justify-start">
+                <Link href="/connexion" className="btn btn-primaire px-6 py-3 text-base">
+                  Commencer gratuitement
+                  <ArrowRight weight="bold" className="size-4" aria-hidden />
+                </Link>
+                <a href="#fonctionnement" className="btn btn-secondaire px-6 py-3 text-base">
+                  Voir comment ça marche
+                </a>
+              </div>
+            </Apparition>
+          </div>
+
+        </div>
+      </section>
+
+      <section id="fonctionnement" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 pt-10 pb-10 sm:px-6">
         <Apparition>
           <p className="text-sm font-semibold tracking-[0.18em] text-mandarine-fonce uppercase">
             Comment ça marche
           </p>
           <h2 className="mt-2 max-w-2xl font-titre text-3xl font-bold tracking-tight text-balance sm:text-4xl">
-            Trois étapes, et plus une seule relance à écrire.
+            De la facture déposée à l’argent encaissé, sans écrire une seule relance.
           </h2>
         </Apparition>
-
-        <ol className="mt-10 grid gap-5 md:grid-cols-3">
-          {ETAPES.map((etape, index) => (
-            <li key={etape.titre}>
-              <Apparition delai={index * 0.08} className="carte h-full p-6">
-                <div className="flex items-center justify-between">
-                  <span className="flex size-11 items-center justify-center rounded-2xl bg-abricot text-mandarine-fonce">
-                    <etape.icone weight="duotone" className="size-6" aria-hidden />
-                  </span>
-                  <span className="font-mono text-sm text-brun">Étape {index + 1}</span>
-                </div>
-                <h3 className="mt-5 font-titre text-xl font-semibold">{etape.titre}</h3>
-                <p className="mt-2 text-brun">{etape.texte}</p>
-              </Apparition>
-            </li>
-          ))}
-        </ol>
+        <Fonctionnement />
       </section>
 
       <section id="atouts" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 pb-20 sm:px-6">
@@ -288,6 +226,20 @@ export default async function Accueil() {
         </Apparition>
       </section>
 
+      <section id="tarifs" className="mx-auto w-full max-w-6xl scroll-mt-24 px-4 pb-24 sm:px-6">
+        <Apparition className="text-center">
+          <p className="text-sm font-semibold tracking-[0.18em] text-mandarine-fonce uppercase">
+            Tarifs
+          </p>
+          <h2 className="mx-auto mt-2 max-w-2xl font-titre text-3xl font-bold tracking-tight text-balance sm:text-4xl">
+            Un prix simple, qui se rembourse dès la première facture récupérée.
+          </h2>
+        </Apparition>
+        <div className="mt-10">
+          <Tarifs />
+        </div>
+      </section>
+
       <section className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
         <Apparition className="carte relative overflow-hidden px-6 py-14 text-center">
           <div
@@ -309,6 +261,24 @@ export default async function Accueil() {
       </section>
 
       <footer className="border-t border-grege">
+        <div className="mx-auto w-full max-w-6xl px-4 pt-16 pb-6 sm:px-6">
+          <Apparition delai={0.9} className="relative mx-auto w-full max-w-[440px]">
+            <Globe />
+            <div className="pointer-events-none absolute inset-x-0 bottom-2 flex flex-col items-center gap-2">
+              <span className="inline-flex items-center gap-2 rounded-full border border-grege bg-white/90 px-3 py-1.5 text-sm font-medium shadow-sm backdrop-blur">
+                <GlobeHemisphereWest weight="duotone" className="size-5 text-mandarine" aria-hidden />
+                Vos clients paient d’où ils veulent
+              </span>
+              <span className="inline-flex items-center gap-1.5 text-xs text-brun">
+                <HandGrabbing weight="duotone" className="size-4" aria-hidden />
+                Faites tourner le globe
+              </span>
+            </div>
+          </Apparition>
+          <p className="mx-auto mt-6 max-w-3xl text-center text-sm text-brun">
+            Paris → {VILLES.map((ville) => ville.nom).join(" · ")}
+          </p>
+        </div>
         <div className="mx-auto flex w-full max-w-6xl flex-wrap items-center justify-between gap-4 px-4 py-8 text-sm text-brun sm:px-6">
           <Image
             src="/dunly-logo-favicons/dunly-logo.svg"
