@@ -40,6 +40,11 @@ export async function PUT(request: Request) {
     }
     const validation_relances = corps.validation_relances;
 
+    if (typeof corps.paiement_carte_actif !== "boolean") {
+      throw new ErreurValidation("Réglage du paiement par carte invalide.");
+    }
+    const paiement_carte_actif = corps.paiement_carte_actif;
+
     // 2. Une seule ligne par utilisateur : création ou mise à jour
     const { data, error } = await supabase
       .from("parametres")
@@ -49,6 +54,7 @@ export async function PUT(request: Request) {
         signature,
         taux_cotisations,
         validation_relances,
+        paiement_carte_actif,
         updated_at: new Date().toISOString(),
       })
       .select(COLONNES_PARAMETRES)

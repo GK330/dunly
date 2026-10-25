@@ -105,10 +105,11 @@ export function valeursDepuisBase(facture: FactureRelancee): ValeursRelance {
   };
 }
 
-// Le paiement par carte (Stripe) arrive à l'étape 6 : d'ici là, aucune relance
-// ne contient de lien, plutôt qu'un lien vers une page qui n'existe pas encore
-export function lienPaiement(): string | null {
-  return null;
+// Lien de paiement par carte, sauf si l'indépendant l'a désactivé (frais Stripe)
+export function lienPaiement(facture: FactureRelancee, parametres: Parametres): string | null {
+  const appUrl = process.env.APP_URL;
+  if (!parametres.paiement_carte_actif || !appUrl) return null;
+  return `${appUrl}/payer/${facture.jeton_paiement}`;
 }
 
 export function composerRelance({ relance, facture, parametres }: ContexteRelance) {
@@ -116,7 +117,7 @@ export function composerRelance({ relance, facture, parametres }: ContexteRelanc
     niveau: relance.niveau,
     corps: relance.contenu ?? "",
     valeurs: valeursDepuisBase(facture),
-    lienPaiement: lienPaiement(),
+    lienPaiement: lienPaiement(facture, parametres),
     signature: signatureRelances(parametres),
   });
 }

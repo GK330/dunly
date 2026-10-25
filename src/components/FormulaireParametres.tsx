@@ -9,6 +9,7 @@ type Props = {
     signature: string;
     taux_cotisations: number;
     validation_relances: boolean;
+    paiement_carte_actif: boolean;
   };
 };
 
@@ -20,6 +21,7 @@ export default function FormulaireParametres({ parametres }: Props) {
     String(Math.round(parametres.taux_cotisations * 10000) / 100).replace(".", ",")
   );
   const [validationRelances, setValidationRelances] = useState(parametres.validation_relances);
+  const [paiementCarte, setPaiementCarte] = useState(parametres.paiement_carte_actif);
   const [chargement, setChargement] = useState(false);
   const [erreur, setErreur] = useState("");
   const [succes, setSucces] = useState("");
@@ -39,6 +41,7 @@ export default function FormulaireParametres({ parametres }: Props) {
           signature,
           taux_cotisations: taux,
           validation_relances: validationRelances,
+          paiement_carte_actif: paiementCarte,
         }),
       });
       const donnees = await reponse.json();
@@ -118,6 +121,21 @@ export default function FormulaireParametres({ parametres }: Props) {
             <span className="block text-sm text-stone-500">
               Activé : rien ne part sans votre validation. Désactivé : la relance part
               automatiquement le jour prévu, après l’e-mail qui vous prévient.
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3">
+          <input
+            type="checkbox"
+            checked={paiementCarte}
+            onChange={(e) => setPaiementCarte(e.target.checked)}
+            className="mt-1 size-4 accent-mandarine"
+          />
+          <span>
+            Proposer le paiement par carte dans les relances
+            <span className="block text-sm text-stone-500">
+              Un lien de paiement Stripe est ajouté à chaque relance. Désactivez-le si vous ne
+              souhaitez pas payer les frais de Stripe.
             </span>
           </span>
         </label>

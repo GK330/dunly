@@ -18,6 +18,7 @@ import {
   statutAffiche,
   type Facture,
 } from "@/lib/facture";
+import { lireParametres } from "@/lib/parametres";
 import { LIBELLES_NIVEAU } from "@/lib/relances";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { estUuid } from "@/lib/validation";
@@ -27,6 +28,9 @@ type FactureDetaillee = Facture & {
   donnees_extraites: (Extraction & { validee_automatiquement?: boolean }) | null;
   relances_arretees: boolean;
   relances_en_pause_jusqu_au: string | null;
+  jeton_paiement: string;
+  lien_ouvert_le: string | null;
+  payee_par_carte: boolean;
   clients: { id: string; nom: string; email: string | null } | null;
 };
 
@@ -42,7 +46,7 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
   const { data } = await supabase
     .from("factures")
     .select(
-      `${COLONNES_FACTURE}, fichier_chemin, donnees_extraites, relances_arretees, relances_en_pause_jusqu_au, clients(id, nom, email)`
+      `${COLONNES_FACTURE}, fichier_chemin, donnees_extraites, relances_arretees, relances_en_pause_jusqu_au, jeton_paiement, lien_ouvert_le, payee_par_carte, clients(id, nom, email)`
     )
     .eq("id", id)
     .maybeSingle();
@@ -53,13 +57,14 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
     notFound();
   }
 
-  const [{ data: clients }, { data: donneesRelances }] = await Promise.all([
+  const [{ data: clients }, { data: donneesRelances }, parametres] = await Promise.all([
     supabase.from("clients").select("id, nom").order("nom"),
     supabase
       .from("relances")
       .select("id, niveau, statut, prevue_le, envoyee_le")
       .eq("facture_id", id)
       .order("created_at", { ascending: false }),
+    lireParametres(supabase, facture.user_id),
   ]);
   const relances = (donneesRelances ?? []) as Pick<
     Relance,
@@ -167,7 +172,30 @@ export default async function DetailFacture({ params }: { params: Promise<{ id: 
             {facture.payee_le && (
               <>
                 <dt className="text-stone-500">Payée le</dt>
-                <dd>{new Date(facture.payee_le).toLocaleDateString("fr-FR")}</dd>
+                <dd>
+                  {new Date(facture.payee_le).toLocaleDateString("fr-FR")}
+                  {facture.payee_par_carte && " (par carte)"}
+                </dd>
+              </>
+            )}
+            {!facture.brouillon && facture.statut === "en_attente" && parametres.paiement_carte_actif && (
+              <>
+                <dt className="text-stone-500">Lien de paiement</dt>
+                <dd className="break-all">
+                  <a
+                    href={`/payer/${facture.jeton_paiement}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="lien"
+                  >
+                    /payer/{facture.jeton_paiement.slice(0, 8)}…
+                  </a>
+                  <span className="block text-stone-500">
+                    {facture.lien_ouvert_le
+                      ? `Ouvert par le client le ${new Date(facture.lien_ouvert_le).toLocaleString("fr-FR")}`
+                      : "Pas encore ouvert"}
+                  </span>
+                </dd>
               </>
             )}
           </dl>

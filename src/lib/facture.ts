@@ -7,6 +7,7 @@ export type StatutAffiche = "brouillon" | "en_attente" | "en_retard" | "payee";
 
 export type Facture = {
   id: string;
+  user_id: string;
   client_id: string | null;
   numero: string | null;
   montant_ttc: number | null;
@@ -21,7 +22,7 @@ export type Facture = {
 };
 
 export const COLONNES_FACTURE =
-  "id, client_id, numero, montant_ttc, emise_le, echeance, statut, payee_le, brouillon, etat_analyse, message_erreur, created_at";
+  "id, user_id, client_id, numero, montant_ttc, emise_le, echeance, statut, payee_le, brouillon, etat_analyse, message_erreur, created_at";
 
 export type Client = {
   id: string;
