@@ -1,5 +1,5 @@
 -- =====================================================================
--- Encaisse · 0001_socle.sql
+-- Dunly · 0001_socle.sql
 -- Structure de données du socle. À exécuter une seule fois, dans le
 -- SQL Editor de Supabase, sur un projet vide.
 -- =====================================================================
