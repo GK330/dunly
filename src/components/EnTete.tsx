@@ -11,6 +11,7 @@ const LIENS = [
   { href: "/factures", libelle: "Factures" },
   { href: "/clients", libelle: "Clients" },
   { href: "/relances", libelle: "Relances" },
+  { href: "/reponses", libelle: "Réponses" },
   { href: "/parametres", libelle: "Paramètres" },
 ];
 

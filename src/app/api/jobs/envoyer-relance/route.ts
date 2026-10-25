@@ -3,6 +3,7 @@ import { chargerContexteRelance, composerRelance, estRelancable } from "@/lib/co
 import { envoyerEmail } from "@/lib/email";
 import { aujourdhuiParis } from "@/lib/facture";
 import { NOMBRE_REESSAIS, verifierSignatureQStash } from "@/lib/qstash";
+import { adresseReponse } from "@/lib/reception";
 import type { StatutRelance } from "@/lib/relances";
 import { creerClientAdmin } from "@/lib/supabase/admin";
 import { estUuid } from "@/lib/validation";
@@ -73,6 +74,8 @@ async function traiter(request: Request) {
       sujet: email.sujet,
       html: email.html,
       texte: email.texte,
+      // Adresse de réponse propre à cette relance : la réponse du client sera rattachée à sa facture
+      repondreA: adresseReponse(relance.id),
     });
 
     return Response.json({ resultat: "envoyée" });
