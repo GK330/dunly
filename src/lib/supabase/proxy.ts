@@ -1,7 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const CHEMINS_PUBLICS = ["/connexion", "/auth", "/api", "/monitoring"];
+// /payer et /paiement sont ouverts aux clients de l'indépendant, qui n'ont pas de compte
+const CHEMINS_PUBLICS = ["/connexion", "/auth", "/api", "/monitoring", "/payer", "/paiement"];
 
 export async function mettreAJourSession(request: NextRequest) {
   let reponse = NextResponse.next({ request });

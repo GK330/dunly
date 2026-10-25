@@ -3,6 +3,7 @@ import { lireRedirection } from "@/lib/email";
 import { QUOTA_ANALYSES, redis } from "@/lib/limitation";
 import { qstash } from "@/lib/qstash";
 import type { Controle } from "@/lib/statut";
+import { creerClientStripe } from "@/lib/stripe";
 import { creerClientAdmin } from "@/lib/supabase/admin";
 import { ID_PLANIFICATION, ROUTE_TOURNEE } from "@/lib/tournee-relances";
 
@@ -170,6 +171,45 @@ const controleTournee: Controle = {
       .eq("statut", "brouillon");
 
     return `Cron « ${planification.cron} » (UTC) · ${count ?? 0} relance(s) en attente de validation`;
+  },
+};
+
+const controleStripe: Controle = {
+  service: "Stripe",
+  description: "Paiement des factures par carte (mode test)",
+  verifier: async () => {
+    // Refuse d'elle-même toute clé qui ne serait pas une clé de test
+    const stripe = creerClientStripe();
+
+    if (!process.env.STRIPE_WEBHOOK_SECRET) {
+      throw new Error("Variable STRIPE_WEBHOOK_SECRET manquante : aucun paiement ne serait enregistré");
+    }
+
+    const solde = await stripe.balance.retrieve();
+    if (solde.livemode) {
+      throw new Error("Clé de production détectée : ce projet doit rester en mode test");
+    }
+
+    const attendu = `${process.env.APP_URL}/api/webhooks/stripe`;
+    const { data: points } = await stripe.webhookEndpoints.list({ limit: 20 });
+    const webhook = points.find((p) => p.url === attendu);
+
+    if (!webhook) {
+      // En local, Stripe ne peut pas joindre localhost : la CLI relaie les événements
+      if (!process.env.VERCEL_ENV) return "Mode test · Webhook local relayé par la CLI Stripe (stripe listen)";
+      throw new Error(`Aucun webhook Stripe ne pointe vers ${attendu}`);
+    }
+
+    if (webhook.status !== "enabled") {
+      throw new Error("Le webhook Stripe est désactivé");
+    }
+
+    const evenements = webhook.enabled_events;
+    if (!evenements.includes("*") && !evenements.includes("checkout.session.completed")) {
+      throw new Error("Le webhook Stripe n'écoute pas l'événement checkout.session.completed");
+    }
+
+    return `Mode test · Webhook actif vers ${attendu}`;
   },
 };
 
@@ -360,6 +400,8 @@ export const VARIABLES_REQUISES = [
   "JETON_API_VERCEL",
   "PROJET_VERCEL_ID",
   "EQUIPE_VERCEL_ID",
+  "STRIPE_SECRET_KEY",
+  "STRIPE_WEBHOOK_SECRET",
 ];
 
 const controleSecrets: Controle = {
@@ -449,6 +491,7 @@ export const CONTROLES: Controle[] = [
   controleTournee,
   controleRealtime,
   controleEmail,
+  controleStripe,
   controleSentry,
   controleUptimeRobot,
   controleLangfuse,
