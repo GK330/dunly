@@ -2,6 +2,7 @@ import "server-only";
 import { lireRedirection } from "@/lib/email";
 import { QUOTA_ANALYSES, redis } from "@/lib/limitation";
 import { qstash } from "@/lib/qstash";
+import { creerClientReception } from "@/lib/reception";
 import type { Controle } from "@/lib/statut";
 import { creerClientStripe } from "@/lib/stripe";
 import { creerClientAdmin } from "@/lib/supabase/admin";
@@ -171,6 +172,47 @@ const controleTournee: Controle = {
       .eq("statut", "brouillon");
 
     return `Cron « ${planification.cron} » (UTC) · ${count ?? 0} relance(s) en attente de validation`;
+  },
+};
+
+const controleReception: Controle = {
+  service: "Réception des e-mails",
+  description: "Réponses des clients aux relances (Resend)",
+  verifier: async () => {
+    const domaine = process.env.EMAIL_DOMAINE_RECEPTION;
+    if (!domaine) {
+      throw new Error("Variable EMAIL_DOMAINE_RECEPTION manquante : les relances partent sans adresse de réponse");
+    }
+
+    if (!process.env.RESEND_WEBHOOK_SECRET) {
+      throw new Error("Variable RESEND_WEBHOOK_SECRET manquante : le webhook refuserait tout");
+    }
+
+    const { data, error } = await creerClientReception().webhooks.list();
+    if (error || !data) {
+      throw new Error(error?.message ?? "Liste des webhooks Resend inaccessible");
+    }
+
+    const attendu = `${process.env.APP_URL}/api/webhooks/resend`;
+    const webhook = data.data.find((w) => w.endpoint === attendu);
+
+    const { count } = await creerClientAdmin()
+      .from("reponses_clients")
+      .select("id", { count: "exact", head: true });
+
+    if (!webhook) {
+      // En local, Resend ne peut pas joindre localhost : les réponses se testent en production
+      if (!process.env.VERCEL_ENV) {
+        return `Adresse relance-…@${domaine} · Webhook testé en production · ${count ?? 0} réponse(s) reçue(s)`;
+      }
+      throw new Error(`Aucun webhook Resend ne pointe vers ${attendu}`);
+    }
+
+    if (webhook.status !== "enabled" || !webhook.events?.includes("email.received")) {
+      throw new Error("Le webhook Resend est désactivé ou n'écoute pas email.received");
+    }
+
+    return `Adresse relance-…@${domaine} · Webhook actif · ${count ?? 0} réponse(s) reçue(s)`;
   },
 };
 
@@ -402,6 +444,9 @@ export const VARIABLES_REQUISES = [
   "EQUIPE_VERCEL_ID",
   "STRIPE_SECRET_KEY",
   "STRIPE_WEBHOOK_SECRET",
+  "EMAIL_DOMAINE_RECEPTION",
+  "RESEND_API_KEY_RECEPTION",
+  "RESEND_WEBHOOK_SECRET",
 ];
 
 const controleSecrets: Controle = {
@@ -491,6 +536,7 @@ export const CONTROLES: Controle[] = [
   controleTournee,
   controleRealtime,
   controleEmail,
+  controleReception,
   controleStripe,
   controleSentry,
   controleUptimeRobot,
