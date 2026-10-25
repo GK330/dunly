@@ -6,6 +6,7 @@ import {
   type ContexteRelance,
 } from "@/lib/contexte-relance";
 import { ajouterJours, aujourdhuiParis, formaterDate, formaterMontant } from "@/lib/facture";
+import { limiteurRelances, verifierQuota } from "@/lib/limitation";
 import { notifierUtilisateur } from "@/lib/notifications";
 import { publierTache, verifierSignatureQStash } from "@/lib/qstash";
 import { redigerRelance } from "@/lib/rediger-relance";
@@ -111,9 +112,10 @@ async function traiter(request: Request) {
       .eq("client_id", facture.client_id)
       .maybeSingle<StatistiquesClient>();
 
-    // 2. Rédaction par l'IA, vérifiée, avec repli sur le modèle fixe
+    // 2. Rédaction par l'IA, vérifiée, avec repli sur le modèle fixe (aussi utilisé hors quota)
+    const quota = await verifierQuota(limiteurRelances, relance.user_id);
     const redaction = await redigerRelance(relance.niveau, statistiques ?? STATISTIQUES_VIDES, {
-      iaAutorisee: true,
+      iaAutorisee: quota.autorise,
       trace: {
         id: relance.id,
         nom: "generation-relance",
