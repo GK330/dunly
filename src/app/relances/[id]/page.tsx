@@ -4,9 +4,15 @@ import ActualisationTempsReel from "@/components/ActualisationTempsReel";
 import BadgeRelance from "@/components/BadgeRelance";
 import BoutonAction from "@/components/BoutonAction";
 import EditeurRelance from "@/components/EditeurRelance";
-import { chargerContexteRelance, composerRelance } from "@/lib/contexte-relance";
+import {
+  chargerContexteRelance,
+  composerRelance,
+  lienPaiement,
+  valeursDepuisBase,
+} from "@/lib/contexte-relance";
 import { formaterDate } from "@/lib/facture";
-import { BALISES, LIBELLES_NIVEAU } from "@/lib/relances";
+import { signatureRelances } from "@/lib/parametres";
+import { LIBELLES_NIVEAU } from "@/lib/relances";
 import { creerClientServeur } from "@/lib/supabase/server";
 import { estUuid } from "@/lib/validation";
 
@@ -74,69 +80,67 @@ export default async function DetailRelance({ params }: { params: Promise<{ id: 
         <p className="mt-6 alerte alerte-attente">
           Rédaction en cours : cette page se met à jour toute seule.
         </p>
-      ) : (
-        <div className="mt-6 grid gap-8 md:grid-cols-2">
-          <section className="min-w-0">
-            <h2 className="font-titre text-lg font-semibold">Aperçu de l’e-mail</h2>
-            {relance.origine_contenu && (
-              <p className="text-sm text-stone-500">{ORIGINES[relance.origine_contenu]}</p>
-            )}
-            <div className="mt-3 carte p-5 text-sm">
-              <p className="font-medium">Objet : {apercu?.sujet}</p>
-              <pre className="mt-3 whitespace-pre-wrap font-sans [overflow-wrap:anywhere] text-stone-800">{apercu?.texte}</pre>
-            </div>
-          </section>
-
-          <section className="flex min-w-0 flex-col gap-4">
-            {modifiable && (
-              <>
-                <div className="flex flex-wrap gap-2">
-                  <BoutonAction
-                    url={`/api/relances/${relance.id}/envoyer`}
-                    libelle="Valider et envoyer maintenant"
-                    libelleEnCours="Envoi…"
-                    confirmation={`La relance part tout de suite à ${facture.clients?.nom ?? "votre client"}${facture.clients?.email ? ` (${facture.clients.email})` : ""}.`}
-                    succes="Relance validée : elle part dans quelques secondes."
-                  />
-                  {relance.statut === "brouillon" ? (
-                    <BoutonAction
-                      url={`/api/relances/${relance.id}/statut`}
-                      corps={{ statut: "validee" }}
-                      libelle={`Valider pour le ${formaterDate(relance.prevue_le)}`}
-                      succes="Relance validée."
-                      libelleEnCours="Validation…"
-                      variante="secondaire"
-                    />
-                  ) : (
-                    <BoutonAction
-                      url={`/api/relances/${relance.id}/statut`}
-                      corps={{ statut: "brouillon" }}
-                      libelle="Retirer la validation"
-                      succes="Validation retirée."
-                      libelleEnCours="Enregistrement…"
-                      variante="secondaire"
-                    />
-                  )}
-                  <BoutonAction
-                    url={`/api/relances/${relance.id}/statut`}
-                    corps={{ statut: "annulee" }}
-                    libelle="Annuler cette relance"
-                    libelleEnCours="Annulation…"
-                    confirmation="Cette relance ne sera pas envoyée."
-                    succes="Relance annulée."
-                    variante="danger"
-                  />
-                </div>
-                <EditeurRelance
-                  key={relance.contenu}
-                  relanceId={relance.id}
-                  contenu={relance.contenu}
-                  balises={BALISES}
+      ) : modifiable ? (
+        <EditeurRelance
+          key={relance.contenu}
+          relanceId={relance.id}
+          contenu={relance.contenu}
+          niveau={relance.niveau}
+          valeurs={valeursDepuisBase(facture)}
+          lienPaiement={lienPaiement(facture, parametres)}
+          signature={signatureRelances(parametres)}
+          origine={relance.origine_contenu ? ORIGINES[relance.origine_contenu] : null}
+          actions={
+            <div className="flex flex-wrap gap-2">
+              <BoutonAction
+                url={`/api/relances/${relance.id}/envoyer`}
+                libelle="Valider et envoyer maintenant"
+                libelleEnCours="Envoi…"
+                confirmation={`La relance part tout de suite à ${facture.clients?.nom ?? "votre client"}${facture.clients?.email ? ` (${facture.clients.email})` : ""}.`}
+                succes="Relance validée : elle part dans quelques secondes."
+              />
+              {relance.statut === "brouillon" ? (
+                <BoutonAction
+                  url={`/api/relances/${relance.id}/statut`}
+                  corps={{ statut: "validee" }}
+                  libelle={`Valider pour le ${formaterDate(relance.prevue_le)}`}
+                  succes="Relance validée."
+                  libelleEnCours="Validation…"
+                  variante="secondaire"
                 />
-              </>
-            )}
-          </section>
-        </div>
+              ) : (
+                <BoutonAction
+                  url={`/api/relances/${relance.id}/statut`}
+                  corps={{ statut: "brouillon" }}
+                  libelle="Retirer la validation"
+                  succes="Validation retirée."
+                  libelleEnCours="Enregistrement…"
+                  variante="secondaire"
+                />
+              )}
+              <BoutonAction
+                url={`/api/relances/${relance.id}/statut`}
+                corps={{ statut: "annulee" }}
+                libelle="Annuler cette relance"
+                libelleEnCours="Annulation…"
+                confirmation="Cette relance ne sera pas envoyée."
+                succes="Relance annulée."
+                variante="danger"
+              />
+            </div>
+          }
+        />
+      ) : (
+        <section className="mt-6 max-w-2xl">
+          <h2 className="font-titre text-lg font-semibold">E-mail</h2>
+          {relance.origine_contenu && (
+            <p className="text-sm text-stone-500">{ORIGINES[relance.origine_contenu]}</p>
+          )}
+          <div className="mt-3 carte p-5 text-sm">
+            <p className="font-medium">Objet : {apercu?.sujet}</p>
+            <pre className="mt-3 whitespace-pre-wrap font-sans [overflow-wrap:anywhere] text-stone-800">{apercu?.texte}</pre>
+          </div>
+        </section>
       )}
     </main>
   );
