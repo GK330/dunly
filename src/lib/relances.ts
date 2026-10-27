@@ -178,6 +178,53 @@ export function verifierCorps(corps: string): Verification {
   return { valide: raisons.length === 0, raisons };
 }
 
+// ---------------------------------------------------------------------
+// Texte modifié par l'utilisateur : il reste libre de ses mots, mais les
+// valeurs de la facture doivent passer par les balises pour rester exactes
+// ---------------------------------------------------------------------
+export const CONTENU_UTILISATEUR_MAX = 3000;
+
+export const LIBELLES_BALISES: Record<Balise, string> = {
+  client: "Client",
+  numero: "N° de facture",
+  montant: "Montant TTC",
+  emise_le: "Émise le",
+  echeance: "Échéance",
+};
+
+export type VerificationSaisie = { erreurs: string[]; avertissements: string[] };
+
+export function verifierSaisie(corps: string): VerificationSaisie {
+  const texte = corps.trim();
+  const erreurs: string[] = [];
+  const avertissements: string[] = [];
+
+  if (texte.length < 10 || texte.length > CONTENU_UTILISATEUR_MAX) {
+    erreurs.push(`Le texte doit contenir entre 10 et ${CONTENU_UTILISATEUR_MAX} caractères.`);
+  }
+
+  const inconnues = [...texte.matchAll(/\{\{\s*([^{}]*?)\s*\}\}/g)]
+    .map((m) => m[1])
+    .filter((b) => !(BALISES as readonly string[]).includes(b));
+  if (inconnues.length > 0) {
+    erreurs.push(`Balise inconnue : {{${inconnues[0]}}}.`);
+  }
+
+  // Une accolade seule est le reste d'une balise abîmée : elle partirait telle quelle
+  const sansBalises = texte.replace(/\{\{\s*[^{}]*?\s*\}\}/g, " ");
+  if (/[{}]/.test(sansBalises)) {
+    erreurs.push("Une balise est incomplète (accolade isolée) : supprimez-la et insérez-la de nouveau.");
+  }
+
+  if (/\d/.test(sansBalises) || /€|\beuros?\b/i.test(sansBalises)) {
+    avertissements.push(
+      "Un montant, un numéro ou une date tapés à la main ne sont pas vérifiés : préférez les pastilles, toujours exactes."
+    );
+  }
+
+  return { erreurs, avertissements };
+}
+
 // Modèles de texte fixes, utilisés quand l'IA est indisponible, hors quota,
 // ou quand son texte ne passe pas la vérification
 export const MODELES_RELANCE: Record<NiveauRelance, string> = {

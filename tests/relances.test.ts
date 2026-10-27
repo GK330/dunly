@@ -5,6 +5,7 @@ import {
   MENTION_PENALITES,
   MODELES_RELANCE,
   niveauAPreparer,
+  verifierSaisie,
   niveauDu,
   PHRASE_DEJA_REGLE,
   scoreDeRisque,
@@ -154,5 +155,28 @@ describe("niveauAPreparer", () => {
   it("ne prépare rien quand le niveau dû est déjà envoyé", () => {
     expect(niveauAPreparer(10, 1, 20)).toBe(0);
     expect(niveauAPreparer(60, 3, 30)).toBe(0);
+  });
+});
+
+describe("verifierSaisie (texte modifié par l'utilisateur)", () => {
+  it("accepte un texte avec des balises complètes", () => {
+    expect(verifierSaisie("La facture {{numero}} de {{montant}} est échue depuis le {{echeance}}.")).toEqual({
+      erreurs: [],
+      avertissements: [],
+    });
+  });
+
+  it.each([
+    ["une balise sans accolade fermante", "La facture {{numero} reste impayée, merci de la régler."],
+    ["une balise sans accolade ouvrante", "La facture {numero}} reste impayée, merci de la régler."],
+    ["une balise inconnue", "La facture {{iban}} reste impayée, merci de la régler."],
+  ])("refuse %s", (_cas, texte) => {
+    expect(verifierSaisie(texte).erreurs).toHaveLength(1);
+  });
+
+  it("signale un montant tapé à la main, sans le refuser", () => {
+    const verification = verifierSaisie("Merci de régler les 1 400 € restants au plus vite.");
+    expect(verification.erreurs).toEqual([]);
+    expect(verification.avertissements).toHaveLength(1);
   });
 });
