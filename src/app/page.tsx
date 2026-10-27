@@ -94,7 +94,6 @@ export default async function Accueil() {
     data: { user },
   } = await supabase.auth.getUser();
 
-  // Déjà connecté : direction le tableau de bord
   if (user) {
     redirect("/tableau-de-bord");
   }

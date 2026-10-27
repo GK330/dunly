@@ -7,7 +7,6 @@ import { lireCorps } from "@/lib/validation";
 
 // Création d'une facture saisie à la main
 export async function POST(request: Request) {
-  // 0. Vérification de la session
   const supabase = await creerClientServeur();
   const {
     data: { user },
@@ -18,11 +17,9 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Validation des données
     const corps = await lireCorps(request);
     const saisie = await lireSaisieFacture(supabase, corps);
 
-    // 2. Enregistrement, au nom de l'utilisateur connecté
     const { data, error } = await supabase
       .from("factures")
       .insert(saisie)
@@ -31,7 +28,7 @@ export async function POST(request: Request) {
 
     if (error) throw error;
 
-    // 3. Facture déjà en retard : sa relance est préparée tout de suite
+    // Facture déjà en retard : sa relance est préparée tout de suite
     preparerRelanceImmediate(data.id);
 
     return Response.json(data, { status: 201 });

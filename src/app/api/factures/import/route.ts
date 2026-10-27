@@ -9,7 +9,6 @@ import { lireCorps } from "@/lib/validation";
 
 // Import d'une facture PDF déjà déposée par le navigateur dans le bucket privé « factures »
 export async function POST(request: Request) {
-  // 0. Vérification de la session
   const supabase = await creerClientServeur();
   const {
     data: { user },
@@ -23,7 +22,7 @@ export async function POST(request: Request) {
   try {
     const corps = await lireCorps(request);
 
-    // 1. Le fichier doit se trouver dans le dossier de l'utilisateur : une clé fabriquée est refusée
+    // Le fichier doit se trouver dans le dossier de l'utilisateur : une clé fabriquée est refusée
     if (!estCheminPdfValide(corps.cheminFichier, user.id)) {
       return Response.json({ erreur: "Fichier invalide." }, { status: 400 });
     }
@@ -33,11 +32,13 @@ export async function POST(request: Request) {
     return reponseErreurBase(erreur, "Erreur lors de la lecture de la demande d'import");
   }
 
-  // 2. Vérification du quota de l'utilisateur, avant tout appel coûteux au modèle d'IA
+  // Vérification du quota de l'utilisateur, avant tout appel coûteux au modèle d'IA
   const quota = await verifierQuota(limiteurAnalyses, user.id);
   const enTetesQuota = entetesQuota(quota);
 
   if (!quota.autorise) {
+    // Le PDF déjà déposé ne sera pas lu : il ne reste pas dans le stockage
+    await creerClientAdmin().storage.from("factures").remove([cheminFichier]);
     const minutes = Math.ceil(quota.secondesAvantReinitialisation / 60);
     return Response.json(
       {
@@ -50,7 +51,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 3. Enregistrement d'un brouillon, avec le statut d'analyse « en cours »
+  // Enregistrement d'un brouillon, avec le statut d'analyse « en cours »
   const { data: facture, error } = await supabase
     .from("factures")
     .insert({ brouillon: true, etat_analyse: "en_cours", fichier_chemin: cheminFichier })
@@ -65,7 +66,7 @@ export async function POST(request: Request) {
     );
   }
 
-  // 4. Publication du message de lecture dans la file
+  // Publication du message de lecture dans la file
   try {
     await publierTache(
       "/api/jobs/analyser-facture",
@@ -88,6 +89,6 @@ export async function POST(request: Request) {
     );
   }
 
-  // 5. Réponse immédiate : la lecture se poursuit en arrière-plan
+  // Réponse immédiate : la lecture se poursuit en arrière-plan
   return Response.json(facture, { status: 202, headers: enTetesQuota });
 }

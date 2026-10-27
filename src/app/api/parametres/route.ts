@@ -12,7 +12,6 @@ function texteLimite(valeur: unknown, champ: string, max: number): string {
 }
 
 export async function PUT(request: Request) {
-  // 0. Vérification de la session
   const supabase = await creerClientServeur();
   const {
     data: { user },
@@ -23,7 +22,6 @@ export async function PUT(request: Request) {
   }
 
   try {
-    // 1. Validation des données
     const corps = await lireCorps(request);
     const nom_affiche = texteLimite(corps.nom_affiche, "Le nom affiché", 100);
     const signature = texteLimite(corps.signature, "La signature", 500);
@@ -45,7 +43,7 @@ export async function PUT(request: Request) {
     }
     const paiement_carte_actif = corps.paiement_carte_actif;
 
-    // 2. Une seule ligne par utilisateur : création ou mise à jour
+    // Une seule ligne par utilisateur : création ou mise à jour
     const { data, error } = await supabase
       .from("parametres")
       .upsert({

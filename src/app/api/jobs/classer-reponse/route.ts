@@ -21,10 +21,10 @@ async function traiter(request: Request) {
   const tentative = Number(request.headers.get("Upstash-Retried") ?? "0");
 
   if (!estUuid(reponseId)) {
-    return Response.json({ resultat: "ignorÃ©" });
+    return Response.json({ resultat: "ignoré" });
   }
 
-  // Le worker n'a pas d'utilisateur connectÃ© : il utilise le client administrateur
+  // Le worker n'a pas d'utilisateur connecté : il utilise le client administrateur
   const supabase = creerClientAdmin();
 
   const { data: reponse } = await supabase
@@ -33,17 +33,17 @@ async function traiter(request: Request) {
     .eq("id", reponseId)
     .maybeSingle();
 
-  // Idempotence : une rÃ©ponse dÃ©jÃ  classÃ©e ne l'est pas une seconde fois
+  // Idempotence : une réponse déjà classée ne l'est pas une seconde fois
   if (!reponse || reponse.categorie !== null) {
-    return Response.json({ resultat: "ignorÃ©" });
+    return Response.json({ resultat: "ignoré" });
   }
 
   Sentry.setUser({ id: reponse.user_id });
   const facture = reponse.factures as unknown as { numero: string; statut: string } | null;
   const aujourdhui = aujourdhuiParis();
 
-  // 1. Classification par l'IA, validÃ©e contre la liste fixe des catÃ©gories.
-  // Hors quota, aucune IA : la rÃ©ponse est classÃ©e Â« autre Â» et l'utilisateur la lira.
+  // 1. Classification par l'IA, validée contre la liste fixe des catégories.
+  // Hors quota, aucune IA : la réponse est classée « autre » et l'utilisateur la lira.
   let classification: Classification = { categorie: "autre", date_promise: null };
   const quota = await verifierQuota(limiteurClassifications, reponse.user_id);
 
@@ -56,7 +56,7 @@ async function traiter(request: Request) {
         metadata: { factureId: reponse.facture_id },
       });
     } catch (erreur) {
-      console.error(`Ã‰chec de la classification (tentative ${tentative + 1}) :`, erreur);
+      console.error(`Échec de la classification (tentative ${tentative + 1}) :`, erreur);
       Sentry.captureException(erreur, {
         tags: { tache: "classification-reponse", tentative: String(tentative + 1) },
         extra: { reponseId: reponse.id },
@@ -65,12 +65,12 @@ async function traiter(request: Request) {
       if (estReessayable(erreur) && tentative < NOMBRE_REESSAIS) {
         return Response.json({ resultat: "nouvelle tentative" }, { status: 500 });
       }
-      // IA indisponible : la rÃ©ponse reste classÃ©e Â« autre Â», l'utilisateur dÃ©cidera
+      // IA indisponible : la réponse reste classée « autre », l'utilisateur décidera
     }
   }
 
-  // 2. Actions automatiques prÃ©vues par le code : l'IA n'en dÃ©clenche aucune autre.
-  // Une facture n'est JAMAIS marquÃ©e payÃ©e automatiquement.
+  // 2. Actions automatiques prévues par le code : l'IA n'en déclenche aucune autre.
+  // Une facture n'est JAMAIS marquée payée automatiquement.
   const action = actionPourCategorie(classification, aujourdhui);
   const facturePayee = facture?.statut === "payee";
 
@@ -88,7 +88,7 @@ async function traiter(request: Request) {
 
       if (error) throw error;
 
-      // Les relances en attente d'envoi sont annulÃ©es ; la tournÃ©e en recrÃ©era aprÃ¨s la pause
+      // Les relances en attente d'envoi sont annulées ; la tournée en recréera après la pause
       const { error: erreurRelances } = await supabase
         .from("relances")
         .update({ statut: "annulee" })
@@ -104,8 +104,8 @@ async function traiter(request: Request) {
         categorie: classification.categorie,
         date_promise: classification.date_promise,
         action_appliquee: [
-          quota.autorise ? null : "Quota de classifications atteint : rÃ©ponse non analysÃ©e par lâ€™IA.",
-          facturePayee ? "Facture dÃ©jÃ  payÃ©e : aucune action." : action.description,
+          quota.autorise ? null : "Quota de classifications atteint : réponse non analysée par l’IA.",
+          facturePayee ? "Facture déjà payée : aucune action." : action.description,
         ]
           .filter(Boolean)
           .join(" "),
@@ -120,25 +120,25 @@ async function traiter(request: Request) {
     return Response.json({ resultat: "nouvelle tentative" }, { status: 500 });
   }
 
-  // 3. Alerte Ã  l'utilisateur (effet secondaire : un Ã©chec ne bloque pas le traitement)
+  // 3. Alerte à l'utilisateur (effet secondaire : un échec ne bloque pas le traitement)
   if (action.alerter) {
     try {
       const appUrl = process.env.APP_URL ?? "";
       await notifierUtilisateur(supabase, reponse.user_id, {
-        sujet: `RÃ©ponse de votre client : ${LIBELLES_CATEGORIE[classification.categorie].libelle} (facture nÂ° ${facture?.numero ?? "?"})`,
+        sujet: `Réponse de votre client : ${LIBELLES_CATEGORIE[classification.categorie].libelle} (facture n° ${facture?.numero ?? "?"})`,
         texte: [
-          `${reponse.expediteur} a rÃ©pondu Ã  votre relance pour la facture nÂ° ${facture?.numero ?? "?"}.`,
-          `CatÃ©gorie proposÃ©e par l'IA : ${LIBELLES_CATEGORIE[classification.categorie].libelle}.`,
+          `${reponse.expediteur} a répondu à votre relance pour la facture n° ${facture?.numero ?? "?"}.`,
+          `Catégorie proposée par l'IA : ${LIBELLES_CATEGORIE[classification.categorie].libelle}.`,
           action.description,
-          "Lisez la rÃ©ponse et corrigez la catÃ©gorie si besoin.",
+          "Lisez la réponse et corrigez la catégorie si besoin.",
         ].join("\n\n"),
         liens: [
-          { libelle: "Voir les rÃ©ponses", url: `${appUrl}/reponses` },
+          { libelle: "Voir les réponses", url: `${appUrl}/reponses` },
           { libelle: "Voir la facture", url: `${appUrl}/factures/${reponse.facture_id}` },
         ],
       });
     } catch (erreur) {
-      console.error("Ã‰chec de l'alerte :", erreur);
+      console.error("Échec de l'alerte :", erreur);
       Sentry.captureException(erreur, { level: "warning", tags: { tache: "alerte-reponse" } });
     }
   }

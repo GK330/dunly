@@ -4,7 +4,6 @@ import { creerClientServeur } from "@/lib/supabase/server";
 import { emailFacultatif, lireCorps, texteObligatoire } from "@/lib/validation";
 
 export async function POST(request: Request) {
-  // 0. Vérification de la session
   const supabase = await creerClientServeur();
   const {
     data: { user },
@@ -15,12 +14,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    // 1. Validation des données
     const corps = await lireCorps(request);
     const nom = texteObligatoire(corps.nom, "Le nom du client", LIMITES.nomMax);
     const email = emailFacultatif(corps.email);
 
-    // 2. Enregistrement, au nom de l'utilisateur connecté (user_id rempli par la base)
+    // Enregistré au nom de l'utilisateur connecté : user_id est rempli par la base
     const { data, error } = await supabase
       .from("clients")
       .insert({ nom, email })

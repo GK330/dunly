@@ -2,181 +2,145 @@
 
 ## Présentation
 
-Dunly est un outil anti-impayés pour les travailleurs indépendants : graphistes, développeurs, consultants…
+Dunly est un outil anti-impayés pour les travailleurs indépendants (graphistes, développeurs, consultants…). L’idée m’est venue d’un constat simple : quand on est seul, relancer un client qui ne paie pas est à la fois pénible et gênant, alors on repousse, et la trésorerie en souffre.
 
-**Lire les factures.** L’indépendant dépose ses factures en PDF. Un modèle d’IA les lit et relève le client, le montant et l’échéance. Le code valide ces champs, puis l’utilisateur les vérifie.
+Avec Dunly, l’indépendant dépose ses factures en PDF. Un modèle d’IA les lit et relève le client, le numéro, le montant et l’échéance. Je vérifie ensuite chaque champ dans le code avant de l’enregistrer.
 
-**Relancer les retards.** Dès qu’une facture a 3 jours de retard, Dunly prépare une relance et prévient l’indépendant par e-mail. Celui-ci la relit, puis l’envoie d’un clic avec « Valider et envoyer maintenant ».
+Dès qu’une facture a trois jours de retard, Dunly prépare une relance et prévient l’indépendant par e-mail, puisqu’il n’est pas forcément sur l’application à ce moment-là. Il relit la relance et l’envoie d’un clic avec « Valider et envoyer maintenant ». Les relances suivantes (J+15, J+30) sont préparées chaque jour par une tournée planifiée, mais rien ne part sans sa validation. Chaque relance contient un lien de paiement par carte. Quand le client répond (« je paie le 20 », « déjà réglé », « je conteste »), sa réponse est classée par l’IA et les relances se mettent en pause ou s’arrêtent.
 
-- Les relances suivantes, à J+15 puis J+30, sont préparées chaque jour par une tournée planifiée. Elles partent sous la validation de l’indépendant.
-- Le texte de chaque relance est rédigé par l’IA selon l’historique du client.
-- Chaque relance contient un lien de paiement par carte.
+Le tableau de bord résume le mois : ce qui est encaissé, ce qui est en attente ou en retard, ce qu’il faut mettre de côté pour l’URSSAF, et ce que l’indépendant peut se verser.
 
-**Lire les réponses.** Les réponses des clients sont classées par l’IA. Selon la catégorie, les relances sont mises en pause ou arrêtées.
+J’ai repris le principe des fiches de révision des TD : un utilisateur connecté fournit un contenu (le PDF d’une facture), un modèle d’IA hébergé le transforme en résultat structuré (les champs de la facture), et ce résultat est enregistré, rattaché à son auteur et consultable plus tard.
 
-**Suivre les encaissements.** Le tableau de bord indique :
+## Adresse de production
 
-- ce qui est encaissé ce mois-ci ;
-- ce qui est en attente ou en retard ;
-- ce qu’il faut mettre de côté pour l’URSSAF ;
-- ce que l’indépendant peut se verser.
-
-Le principe reprend celui des fiches de révision des TD : un utilisateur connecté fournit un contenu (le PDF d’une facture), un modèle d’IA hébergé le transforme en résultat structuré (les champs de la facture), et ce résultat est enregistré, rattaché à son auteur et consultable plus tard.
-
-## Liens
-
-- **Production :** <https://dunly-tau.vercel.app>
-- **Page de statut (UptimeRobot) :** <https://stats.uptimerobot.com/BFFIWRvpQ7>
-- **Vidéo de démonstration :** à compléter (lien accessible sans compte)
+- Application : <https://dunly-tau.vercel.app>
+- Page de statut (UptimeRobot) : <https://stats.uptimerobot.com/BFFIWRvpQ7>
+- Vidéo de démonstration : à compléter
 
 ## Architecture
 
-Le navigateur ne communique qu’avec le back Next.js, exécuté en fonctions serverless sur Vercel (région `cdg1`, Paris). Seul le back détient les clés d’API.
+Le navigateur ne parle qu’au back Next.js, qui tourne en fonctions serverless sur Vercel (région `cdg1`, Paris). Les clés d’API ne quittent jamais le serveur.
 
 | Service | Rôle |
 | --- | --- |
-| Vercel | Hébergement, fonctions serverless, déploiement continu avec porte de qualité (lint, types, tests) |
-| Groq (API compatible OpenAI) | Lecture des factures, rédaction des relances, classification des réponses |
-| Supabase Database | Clients, factures, relances, réponses ; Row Level Security sur toutes les tables |
+| Vercel | Hébergement, fonctions serverless, déploiement continu avec porte de qualité (lint, types, tests, build) |
+| Groq | Modèle d’IA : lecture des factures, rédaction des relances, classification des réponses |
+| Supabase Database | Clients, factures, relances, réponses, avec Row Level Security sur toutes les tables |
 | Supabase Auth | Connexion sans mot de passe, par lien magique |
-| Upstash Redis | Quotas par utilisateur (préfixe `dunly:`) et historique des contrôles de `/admin` |
-| Upstash QStash | Traitements en arrière-plan et tournée quotidienne planifiée des relances |
-| Resend | Envoi des relances et des notifications, réception des réponses (`<id>.resend.app`) |
+| Upstash Redis | Quotas par utilisateur et historique des contrôles de `/admin` |
+| Upstash QStash | Traitements en arrière-plan et tournée quotidienne des relances |
+| Resend | Envoi des relances et des notifications, réception des réponses des clients |
 | Stripe (mode test) | Paiement des factures par carte |
 
 ### Briques au choix et pourquoi
 
-| Brique | Pourquoi elle est indispensable à Dunly |
+| Brique | Pourquoi je l’ai prise |
 | --- | --- |
-| Stockage de fichiers (Supabase Storage) | Les factures sont des PDF : bucket privé `factures`, un dossier par utilisateur, 5 Mo maximum |
-| Génération asynchrone (QStash) | La lecture d’un PDF, la rédaction et l’envoi des relances se font hors requête, avec nouvelles tentatives ; la tournée quotidienne est une planification QStash |
-| Temps réel (Supabase Realtime) | Une facture passe de « Lecture en cours » à « À vérifier » sans rechargement ; relances et réponses s’affichent dès leur arrivée |
-| Notifications par e-mail (Resend) | Cœur du produit : relances aux clients, « Relance prête », alertes de réponse et de paiement, sans bloquer le traitement en cas d’échec |
-| Suivi des erreurs (Sentry) | Les workers tournent sans utilisateur : sans Sentry, un échec de relance passerait inaperçu |
-| Observabilité de l’IA (Langfuse) | Chaque lecture, rédaction et classification est tracée (tokens, latence, coût) avec l’identifiant de la facture, de la relance ou de la réponse |
-| Surveillance externe (UptimeRobot) | Route `/api/health` surveillée et page de statut publique |
-| Gestion des secrets (Infisical) | Une trentaine de secrets, synchronisés vers Vercel en Production et en Preview |
+| Stockage de fichiers (Supabase Storage) | Les factures sont des PDF : je les range dans un bucket privé, un dossier par utilisateur, 5 Mo maximum |
+| Génération asynchrone (QStash) | Lire un PDF ou rédiger une relance prend plusieurs secondes : je le fais hors requête, avec de nouvelles tentatives en cas d’échec. La tournée quotidienne est une planification QStash |
+| Temps réel (Supabase Realtime) | La facture passe de « Lecture en cours » au résultat sans recharger la page ; relances et réponses apparaissent dès leur arrivée |
+| Notifications par e-mail (Resend) | C’est le cœur du produit : relances aux clients, e-mail « Relance prête », alertes de réponse et de paiement |
+| Suivi des erreurs (Sentry) | Mes workers tournent sans utilisateur devant l’écran : sans Sentry, une relance qui échoue passerait inaperçue |
+| Observabilité de l’IA (Langfuse) | Chaque appel au modèle est tracé (tokens, latence, coût) avec l’identifiant de la facture ou de la relance |
+| Surveillance externe (UptimeRobot) | La route `/api/health` est surveillée en continu, avec une page de statut publique |
+| Gestion des secrets (Infisical) | J’ai une trentaine de secrets : ils sont centralisés dans Infisical et synchronisés vers Vercel |
 
-Chaque brique est contrôlée dans `/admin`, page réservée aux administrateurs (`ADMIN_EMAILS`) :
-
-- 17 contrôles (Vercel, IA, base, Auth, stockage, Redis, QStash, tournée des relances, Realtime, Resend, réception, Stripe, Sentry, UptimeRobot, Langfuse, Infisical, déploiement continu) ;
-- un historique par environnement, rafraîchi automatiquement.
+Chaque brique a son contrôle dans `/admin`, une page réservée aux adresses listées dans `ADMIN_EMAILS` (un autre compte obtient une page introuvable). Elle compte 17 contrôles, avec un historique et un rafraîchissement automatique.
 
 ### Sécurité
 
-- **Contrôle des requêtes :** `getUser()` côté serveur sur chaque route et chaque page, validation de toutes les entrées, messages d’erreur sans détail technique.
-- **Clé secrète Supabase :** le client administrateur n’est utilisé que dans les workers, les webhooks et la page publique de paiement.
-- **Garde-fou e-mail :** hors production, aucun e-mail ne part vers une vraie adresse. Tout est redirigé vers `EMAIL_REDIRECTION`, et l’envoi est bloqué si cette variable manque.
-- **Signatures et idempotence :** les webhooks Stripe et Resend sont signés, les workers QStash vérifient la signature, et chaque traitement est idempotent.
-- **Lien de paiement public :** jeton aléatoire de 64 caractères (jamais l’identifiant de la facture), montant toujours lu en base, ouvertures limitées. Seule une clé Stripe de test est acceptée.
+- Chaque route et chaque page vérifie la session côté serveur avec `getUser()`. Toutes les entrées sont validées, et les messages d’erreur ne donnent aucun détail technique.
+- Le client administrateur (clé secrète Supabase) ne sert que dans les workers, les webhooks et la page publique de paiement, là où il n’y a pas d’utilisateur connecté.
+- Garde-fou e-mail : hors production, aucun e-mail ne peut partir vers une vraie adresse. Tout est redirigé vers `EMAIL_REDIRECTION`, et l’envoi est bloqué si cette variable manque.
+- Les webhooks Stripe et Resend sont signés, les workers vérifient la signature de QStash, et tous les traitements sont idempotents (un message reçu deux fois ne fait rien de plus).
+- Le lien de paiement utilise un jeton aléatoire de 64 caractères, jamais l’identifiant de la facture, et le montant est toujours relu en base. Seule une clé Stripe de test est acceptée.
 
 ### Quotas par utilisateur
 
-Le quota du fournisseur d’IA est partagé : chaque utilisateur dispose de sa propre part (Upstash Redis, fenêtre glissante).
+Le quota du fournisseur d’IA est partagé entre tous les utilisateurs : j’en donne une part à chacun, sur une fenêtre glissante (Upstash Redis).
 
 | Usage | Quota | Une fois le quota atteint |
 | --- | --- | --- |
-| Lecture de PDF | 10 par heure | Refus clair (429, `Retry-After`, quota restant affiché) |
+| Lecture de PDF | 2 par heure | Refus clair, avec le temps à attendre ; le PDF déposé est supprimé |
 | Rédaction de relance | 30 par jour | Modèle de texte fixe, signalé sur la relance |
 | Classification de réponse | 50 par jour | Catégorie « autre » sans appel à l’IA, signalée à l’utilisateur |
 | Ouverture d’un lien de paiement | 10 par heure et par lien | Page « Trop de tentatives » |
 
-Si Redis est indisponible, l’application continue de fonctionner (fail open) et l’incident est journalisé.
+J’ai volontairement mis la lecture de PDF à 2 par heure pour pouvoir montrer le refus dans la démonstration. Si Redis tombe en panne, l’application continue de fonctionner (fail open) et l’incident est journalisé.
 
 ## Modèle d’IA
 
-- **Fournisseur :** Groq, offre gratuite sans carte bancaire.
+- **Fournisseur :** Groq, dont l’offre gratuite ne demande pas de carte bancaire.
 - **Modèle :** `openai/gpt-oss-20b`, configuré par `AI_BASE_URL`, `AI_API_KEY` et `AI_MODEL`.
-- **Justification :**
-  - Il est rapide et gratuit.
-  - Il gère les sorties structurées en JSON strict, indispensables aux trois usages.
-  - Ses réponses suffisent pour extraire des champs et classer un e-mail.
-  - Pour une meilleure rédaction des relances, il suffit de passer à `openai/gpt-oss-120b`, sans modifier le code.
+- **Pourquoi ce modèle :** il est rapide, gratuit, et il gère les sorties en JSON strict, dont j’ai besoin pour mes trois usages. Pour extraire des champs ou classer un e-mail, sa qualité suffit. Si je voulais des relances mieux rédigées, il suffirait de passer à `openai/gpt-oss-120b`, sans toucher au code.
 
-L’IA ne décide jamais seule :
+Je ne laisse jamais l’IA décider seule :
 
-- **Lecture des factures :** les champs extraits sont validés par le code (montant, dates, e-mail). Une lecture fiable valide la facture ; sinon elle reste « À vérifier ». Dans les deux cas, l’utilisateur peut corriger.
-- **Relances (anti-hallucination) :** l’IA n’écrit que le corps du message. Le montant, le numéro, les dates, le lien de paiement, les mentions légales et la signature sont insérés par le code depuis la base, via des balises (`{{montant}}`…). Un texte qui contient un chiffre, une monnaie, un mois, un jour, une date relative, un nombre en lettres, un lien ou une balise inconnue est remplacé par un modèle fixe.
-- **Validation humaine :** par défaut, aucune relance ne part sans la validation de l’utilisateur (réglage `validation_relances`).
-- **Réponses des clients :** le texte du client est placé entre des délimiteurs aléatoires et traité comme une donnée. Le modèle choisit une catégorie dans une liste fixe (JSON avec `enum`). Le serveur valide la réponse et utilise « autre » en cas de doute. Seul le code applique les actions, et jamais « marquer payée ».
-- **Calculs du tableau de bord :** réalisés en TypeScript, en centimes. L’IA n’y intervient pas.
+- **Lecture des factures :** le code valide chaque champ extrait (montant, dates, e-mail). Une lecture complète et fiable valide la facture, sinon elle reste « À vérifier ». Dans les deux cas, l’utilisateur peut corriger.
+- **Relances :** l’IA n’écrit que le corps du message. Le montant, le numéro, les dates, le lien de paiement, les mentions légales et la signature sont insérés par le code depuis la base, grâce à des balises (`{{montant}}`…). Si le texte de l’IA contient un chiffre, une monnaie, une date, un nombre en lettres, un lien ou une balise inconnue, je le remplace par un modèle fixe. Dans l’éditeur, les balises s’affichent en pastilles avec leur vraie valeur, et ne peuvent pas être abîmées.
+- **Validation humaine :** par défaut, aucune relance ne part sans que l’utilisateur l’ait validée.
+- **Réponses des clients :** le texte du client est placé entre des délimiteurs aléatoires et traité comme une simple donnée (protection contre l’injection de consignes). Le modèle doit choisir une catégorie dans une liste fixe ; le serveur vérifie sa réponse et utilise « autre » en cas de doute. Seul le code applique les actions, et il ne marque jamais une facture comme payée.
+- **Calculs du tableau de bord :** faits en TypeScript, en centimes. L’IA n’y touche pas.
 
 ## Structure de données
 
-Scripts versionnés, à exécuter dans l’ordre dans le SQL Editor de Supabase : `supabase/0001_socle.sql` puis `supabase/0002_fonctionnalites.sql`.
+Les scripts sont versionnés et s’exécutent dans l’ordre dans le SQL Editor de Supabase : `supabase/0001_socle.sql`, puis `supabase/0002_fonctionnalites.sql`.
 
 | Table | Rôle | Relations |
 | --- | --- | --- |
-| `parametres` | Nom, signature, taux de cotisations, `validation_relances`, `paiement_carte_actif` | 1 ligne par utilisateur |
+| `parametres` | Nom, signature, taux de cotisations, validation des relances, paiement par carte | 1 ligne par utilisateur |
 | `clients` | Clients de l’indépendant | `user_id` → `auth.users` |
-| `factures` | Numéro, montant TTC, dates, statut (`en_attente`, `payee`), brouillon, état de la lecture du PDF (`etat_analyse`), jeton de paiement, pause ou arrêt des relances | `client_id` → `clients`, `user_id` |
-| `relances` | Niveau (1 à 3), statut (`brouillon`, `validee`, `envoyee`, `annulee`), date prévue, corps avec balises, origine (`ia`, `modele`, `utilisateur`) | `facture_id` → `factures`, `user_id` |
+| `factures` | Numéro, montant TTC, dates, statut (`en_attente`, `payee`), brouillon, état de la lecture du PDF, jeton de paiement, pause ou arrêt des relances | `client_id` → `clients`, `user_id` |
+| `relances` | Niveau (1 à 3), statut (`brouillon`, `validee`, `envoyee`, `annulee`), date prévue, corps avec balises, origine du texte (`ia`, `modele`, `utilisateur`) | `facture_id` → `factures`, `user_id` |
 | `reponses_clients` | Réponses reçues, catégorie, date promise, correction par l’utilisateur | `facture_id`, `relance_id`, `user_id` |
-| `evenements_stripe` | Événements Stripe déjà traités (idempotence) | aucune |
+| `evenements_stripe` | Événements Stripe déjà traités, pour ne jamais compter un paiement deux fois | aucune |
 | Vue `statistiques_clients` | Nombre de factures et de retards, retard moyen, calculés en SQL (`security_invoker`) | `clients` |
 
-« En retard » n’est jamais stocké. Il se calcule : statut `en_attente` et échéance dépassée, à la date de Paris.
+Le statut « en retard » n’est jamais stocké : il se calcule à partir du statut `en_attente` et de l’échéance, à la date de Paris.
 
 **Règles de sécurité :**
 
-- La Row Level Security est activée sur toutes les tables.
-- Chaque utilisateur ne lit et ne modifie que ses propres lignes (`(select auth.uid()) = user_id`).
+- La Row Level Security est activée sur toutes les tables : chaque utilisateur ne voit et ne modifie que ses propres lignes (`(select auth.uid()) = user_id`).
 - Une facture ne peut être rattachée qu’à un client du même utilisateur.
-- Les tables écrites par le serveur (`relances` en création, `reponses_clients` en création, `evenements_stripe`) n’ont pas de politique d’insertion côté utilisateur.
+- Les tables remplies par le serveur (`relances` et `reponses_clients` en création, `evenements_stripe`) n’ont pas de politique d’insertion côté utilisateur.
 - Le bucket `factures` est privé, et chacun n’accède qu’à son propre dossier.
 
 ## Lancer le projet en local
 
-**Prérequis :** Node.js 22 ou supérieur, un compte sur chaque service et la CLI Infisical (facultative).
+**Prérequis :** Node.js 22 ou plus, un compte sur chaque service, et la CLI Infisical (facultative).
 
 Sous Windows PowerShell, dans trois terminaux :
 
 ```powershell
 npm install
-Copy-Item .env.example .env.local   # puis compléter les valeurs (ou utiliser Infisical)
+Copy-Item .env.example .env.local   # puis compléter les valeurs (ou passer par Infisical)
 
-npx @upstash/qstash-cli dev          # terminal 1 : QStash local (tâches de fond)
-npm run dev:secrets                  # terminal 2 : l'application, secrets injectés par Infisical
-                                     #   (ou : npm run dev avec .env.local)
+npx @upstash/qstash-cli dev          # terminal 1 : QStash en local, pour les tâches de fond
+npm run dev:secrets                  # terminal 2 : l'application, avec les secrets d'Infisical
+                                     #   (ou npm run dev avec .env.local)
 stripe listen --forward-to localhost:3000/api/webhooks/stripe   # terminal 3, facultatif : paiements
 ```
 
-Avant chaque envoi de code, la même porte de qualité que Vercel :
+Avant chaque envoi de code, je lance la même porte de qualité que Vercel :
 
 ```powershell
 npm run lint; if ($?) { npm run typecheck }; if ($?) { npm test }
 ```
 
-**Variables d’environnement :**
+**Variables d’environnement :** la liste complète, sans valeur, est dans `.env.example`. En local, `EMAIL_REDIRECTION` est obligatoire ; tant qu’aucun domaine n’est vérifié chez Resend, ce doit être l’adresse du compte Resend.
 
-- **Liste complète :** voir `.env.example`, sans valeur.
-- **En local :** `EMAIL_REDIRECTION` est obligatoire. Elle doit être l’adresse du compte Resend tant qu’aucun domaine n’est vérifié.
+**Tests :** Vitest couvre les calculs du tableau de bord et du retard, la lecture des montants et des dates, les niveaux de relance, la protection contre les hallucinations, la vérification du texte modifié par l’utilisateur et la classification des réponses.
 
-**Tests automatisés (Vitest) :**
-
-- calculs du tableau de bord et statut « en retard » ;
-- lecture des montants et des dates, validation des champs extraits ;
-- niveaux de relance et délai entre deux envois ;
-- anti-hallucination des relances ;
-- liste fixe et actions de la classification.
-
-## Méthode de travail
-
-- Un commit par étape du sujet, en français.
-- À partir de l’étape 5, chaque étape est développée sur sa propre branche (`etape-5-relances`, `etape-6-paiement`…), puis fusionnée par pull request.
-- La branche `main` est protégée : pull request obligatoire et vérification Vercel (lint, types, tests, construction) réussie avant toute fusion.
+**Méthode de travail :** un commit par étape du sujet. À partir de l’étape 5, chaque étape a sa propre branche, fusionnée par pull request ; `main` est protégée (pull request obligatoire, vérification Vercel réussie avant toute fusion).
 
 ## Limites et améliorations possibles
 
-- **Stripe Connect :** l’argent arrive sur un seul compte Stripe, en mode test. En production, chaque indépendant doit être payé directement sur son propre compte : il faut Stripe Connect (comptes connectés, onboarding KYC, `transfer_data` ou paiements directs).
-- **Domaine d’envoi :** sans domaine vérifié chez Resend, les e-mails ne peuvent partir que vers l’adresse du compte, et arrivent souvent dans les spams. Un domaine vérifié (SPF, DKIM) réglerait les deux problèmes.
-- **Webhooks en local :** Resend ne peut pas joindre un poste local. Le paiement et la réception des réponses se testent donc en production (mode test), ou en local avec la CLI Stripe.
+- **Stripe Connect :** aujourd’hui, l’argent arrive sur un seul compte Stripe, en mode test. Pour un vrai produit, chaque indépendant devrait être payé directement sur son compte, ce qui demande Stripe Connect (comptes connectés, vérification d’identité, transferts).
+- **Domaine d’envoi :** sans domaine vérifié chez Resend, les e-mails ne partent que vers l’adresse du compte et arrivent souvent dans les spams. Un domaine à moi, avec SPF et DKIM, réglerait les deux problèmes.
+- **Webhooks en local :** Resend ne peut pas joindre mon poste, donc je teste le paiement et la réception des réponses en production (en mode test), ou en local avec la CLI Stripe.
 - **Mentions légales :** l’indemnité forfaitaire de 40 € ne s’applique qu’entre professionnels. Il faudrait distinguer les clients particuliers.
-- **Une seule base :** le local, les prévisualisations et la production partagent la même base Supabase et le même Redis (seul l’historique de `/admin` est séparé). Les prévisualisations ne sont pas pleinement fonctionnelles, car QStash ne peut pas joindre un déploiement protégé.
-- **Tarifs :** la section Tarifs de la page d’accueil est une simulation. Aucun abonnement n’est vendu.
-- **Pistes d’amélioration :**
-  - relances par SMS ;
-  - export comptable ;
-  - lecture des PDF scannés (OCR) ;
-  - comparaison des modèles d’IA avec les scores Langfuse ;
-  - prise en compte des corrections de catégorie pour améliorer la consigne.
+- **Une seule base :** le local, les prévisualisations et la production partagent la même base Supabase et le même Redis (seul l’historique de `/admin` est séparé). Les prévisualisations ne sont donc pas pleinement fonctionnelles, car QStash ne peut pas joindre un déploiement protégé.
+- **Texte d’origine :** quand l’utilisateur modifie une relance, le texte proposé par l’IA n’est pas conservé.
+- **Tarifs :** la section Tarifs de la page d’accueil est une simulation, aucun abonnement n’est vendu.
+- **Ce que j’ajouterais ensuite :** des relances par SMS, un export comptable, la lecture des PDF scannés (OCR), la comparaison de plusieurs modèles avec les scores de Langfuse, et l’utilisation des corrections de catégorie pour améliorer la consigne donnée à l’IA.

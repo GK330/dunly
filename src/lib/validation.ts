@@ -102,7 +102,7 @@ export async function lireCorps(request: Request): Promise<Record<string, unknow
       return corps;
     }
   } catch {
-    // Traité ci-dessous
+    // Corps illisible : refusé juste après
   }
 
   throw new ErreurValidation("Requête invalide.");

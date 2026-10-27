@@ -9,7 +9,6 @@ export function echapperHtml(texte: string): string {
     .replace(/'/g, "&#39;");
 }
 
-// Transforme un texte brut en paragraphes HTML échappés
 export function paragraphesHtml(texte: string): string {
   return texte
     .split(/\n{2,}/)
