@@ -3,16 +3,6 @@
 // AI Text Loading de Kokonut UI (https://kokonutui.com, licence MIT).
 // Adaptation Dunly : textes en français, couleurs de la charte, sans mode sombre.
 
-/**
- * @author: @kokonutui
- * @description: AI Text Loading
- * @version: 2.0.0
- * @date: 2026-10-14
- * @license: MIT
- * @website: https://kokonutui.com
- * @github: https://github.com/kokonut-labs/kokonutui
- */
-
 import {
   AnimatePresence,
   MotionConfig,
@@ -26,14 +16,11 @@ interface AITextLoadingProps {
   texts?: string[];
   className?: string;
   interval?: number;
-  /** Stable status for screen readers; the cycling words are hidden from them. */
   label?: string;
-  /** Show the seconds spent so far next to the words. */
   showElapsed?: boolean;
 }
 
 const EASE_OUT = [0.23, 1, 0.32, 1] as const;
-// Gap between neighbouring letters in the wave, and one wave's length.
 const WAVE_STEP = 0.07;
 const WAVE_CSS = `
 @keyframes kokonut-ai-wave { 50% { opacity: 0.3; } }
@@ -71,7 +58,6 @@ export default function AITextLoading({
 }: AITextLoadingProps) {
   const [currentTextIndex, setCurrentTextIndex] = useState(0);
   const [seconds, setSeconds] = useState(0);
-  // Clamped, so a shorter (or empty) `texts` never reads past the end.
   const textIndex = texts.length > 0 ? currentTextIndex % texts.length : 0;
   const text = texts[textIndex] ?? "";
 
@@ -106,7 +92,6 @@ export default function AITextLoading({
         className
       )}
     >
-      {/* React hoists and dedupes this, so several loaders share one copy. */}
       <style href="kokonut-ai-wave" precedence="default">
         {WAVE_CSS}
       </style>
@@ -127,7 +112,6 @@ export default function AITextLoading({
               {Array.from(text).map((char, i) => (
                 <motion.span
                   className="inline-block"
-                  // biome-ignore lint/suspicious/noArrayIndexKey: letters of one fixed word, never reordered
                   key={i}
                   variants={letterVariants}
                 >

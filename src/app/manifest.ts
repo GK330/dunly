@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 
-// Manifeste de l'application (ajout à l'écran d'accueil sur mobile)
 export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Dunly",

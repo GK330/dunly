@@ -5,12 +5,11 @@ import { Redis } from "@upstash/redis";
 // Lit UPSTASH_REDIS_REST_URL et UPSTASH_REDIS_REST_TOKEN
 export const redis = Redis.fromEnv();
 
-// Toutes les clés de l'application commencent par ce préfixe
 export const PREFIXE_REDIS = "dunly";
 
 // Chaque appel au modèle d'IA consomme le quota partagé du fournisseur :
 // chaque utilisateur dispose de sa propre part, sur une fenêtre glissante.
-export const QUOTA_ANALYSES = 10;
+export const QUOTA_ANALYSES = 2;
 export const QUOTA_RELANCES = 30;
 export const QUOTA_CLASSIFICATIONS = 50;
 

@@ -72,7 +72,6 @@ export default function TableauStatut() {
     appliquer(recupererStatut());
   }, [appliquer]);
 
-  // Premier chargement
   useEffect(() => {
     appliquer(recupererStatut());
   }, [appliquer]);

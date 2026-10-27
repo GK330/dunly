@@ -59,9 +59,7 @@ export function niveauAPreparer(
   return cible as NiveauRelance;
 }
 
-// ---------------------------------------------------------------------
 // Historique du client, calculé en SQL (vue statistiques_clients)
-// ---------------------------------------------------------------------
 export type StatistiquesClient = {
   nombre_factures: number;
   nombre_retards: number;
@@ -101,10 +99,8 @@ export function choisirTon(niveau: NiveauRelance, stats: StatistiquesClient): st
   return clientFidele ? "chaleureux et compréhensif" : "courtois et bienveillant";
 }
 
-// ---------------------------------------------------------------------
 // Anti-hallucination : l'IA n'écrit que le corps du message. Les valeurs
 // (montant, numéro, dates) sont des balises remplacées par le code.
-// ---------------------------------------------------------------------
 export const BALISES = ["client", "numero", "montant", "emise_le", "echeance"] as const;
 export type Balise = (typeof BALISES)[number];
 
@@ -178,10 +174,8 @@ export function verifierCorps(corps: string): Verification {
   return { valide: raisons.length === 0, raisons };
 }
 
-// ---------------------------------------------------------------------
 // Texte modifié par l'utilisateur : il reste libre de ses mots, mais les
 // valeurs de la facture doivent passer par les balises pour rester exactes
-// ---------------------------------------------------------------------
 export const CONTENU_UTILISATEUR_MAX = 3000;
 
 export const LIBELLES_BALISES: Record<Balise, string> = {
@@ -239,9 +233,7 @@ Je vous remercie de bien vouloir procéder à son règlement dans les meilleurs 
 Je vous demande de procéder sans délai à son règlement. À défaut, je me verrai dans l’obligation d’engager les démarches de recouvrement prévues par la loi.`,
 };
 
-// ---------------------------------------------------------------------
 // Composition de l'e-mail final : structure fixe, valeurs issues de la base
-// ---------------------------------------------------------------------
 export type ValeursRelance = Record<Balise, string>;
 
 export function remplacerBalises(corps: string, valeurs: ValeursRelance): string {
