@@ -21,7 +21,7 @@ J'ai gardé le principe vu en TD avec les fiches de révision : un utilisateur c
 ## Adresse de production
 
 - Application : https://dunly-tau.vercel.app
-- Vidéo de démonstration : https://youtu.be/da1xknKZplU
+- Vidéo de démonstration : https://youtu.be/UqpSgJu33Ug
 
 ## Architecture
 
