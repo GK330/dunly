@@ -116,10 +116,6 @@ Toutes les variables d'environnement sont listées (sans valeur) dans `.env.exam
 
 - **Stripe Connect** : pour l'instant, tout l'argent arrive sur un seul compte Stripe en mode test. Dans un vrai produit, chaque indépendant devrait recevoir l'argent directement sur son compte, ce qui demande Stripe Connect (comptes connectés, vérification d'identité...).
 - **Domaine pour les mails** : comme je n'ai pas de domaine vérifié chez Resend, les mails ne peuvent partir que vers l'adresse de mon compte, et ils arrivent souvent dans les spams. Avec mon propre domaine (et SPF / DKIM), ça réglerait les deux problèmes.
-- **Tests en local** : Resend ne peut pas envoyer ses webhooks sur mon PC, donc j'ai testé le paiement et la réception des réponses directement en production (en mode test).
-- **Mentions légales** : l'indemnité de 40 € pour retard de paiement ne concerne que les clients professionnels. Il faudrait gérer différemment les particuliers.
 - **Une seule base** : le local, les prévisualisations et la production utilisent la même base Supabase et le même Redis (seul l'historique de `/admin` est séparé). Les prévisualisations Vercel ne marchent donc pas complètement, parce que QStash ne peut pas accéder à un déploiement protégé.
-- **Texte d'origine** : quand l'utilisateur modifie une relance, le texte proposé par l'IA n'est pas gardé.
-- **Tarifs** : la section Tarifs de la page d'accueil est juste une simulation, rien n'est vendu.
 
 Si je continuais le projet, j'ajouterais les relances par SMS, un export pour le comptable, la lecture des PDF scannés (OCR), et j'utiliserais les corrections de catégorie faites par les utilisateurs pour améliorer la consigne donnée à l'IA.
