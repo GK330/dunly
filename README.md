@@ -21,7 +21,6 @@ J'ai gardé le principe vu en TD avec les fiches de révision : un utilisateur c
 ## Adresse de production
 
 - Application : https://dunly-tau.vercel.app
-- Page de statut : https://stats.uptimerobot.com/BFFIWRvpQ7
 - Vidéo de démonstration : à compléter
 
 ## Architecture
@@ -47,31 +46,10 @@ Le navigateur ne parle qu'au back Next.js, qui tourne en serverless sur Vercel (
 - **Notifications par mail (Resend)** : c'est vraiment le cœur de l'appli. Ça sert aux relances, au mail "Relance prête" et aux alertes quand un client répond ou paie.
 - **Suivi des erreurs (Sentry)** : mes traitements en arrière-plan tournent sans personne devant l'écran. Sans Sentry, une relance qui plante passerait complètement inaperçue.
 - **Observabilité de l'IA (Langfuse)** : chaque appel au modèle est tracé (tokens, temps de réponse, coût), avec l'identifiant de la facture ou de la relance concernée.
-- **Surveillance externe (UptimeRobot)** : il vérifie la route `/api/health` en continu, et il y a une page de statut publique.
+- **Surveillance externe (UptimeRobot)** : il vérifie la route `/api/health` en continu, et il y a une page de statut publique : https://stats.uptimerobot.com/BFFIWRvpQ7.
 - **Gestion des secrets (Infisical)** : j'ai une trentaine de variables d'environnement, donc je les gère dans Infisical, qui les synchronise avec Vercel.
 
 Toutes ces briques sont vérifiées sur la page `/admin` (17 contrôles, avec un historique). Cette page n'est accessible qu'aux adresses mises dans `ADMIN_EMAILS`. Pour les autres comptes, elle renvoie une page introuvable.
-
-### Sécurité
-
-- Chaque route et chaque page vérifie l'utilisateur côté serveur avec `getUser()`. Les données reçues sont toujours validées, et les messages d'erreur ne montrent jamais de détail technique.
-- J'utilise le client administrateur de Supabase (clé secrète) uniquement là où il n'y a pas d'utilisateur connecté : les traitements en arrière-plan, les webhooks et la page de paiement.
-- J'ai mis un garde-fou sur les mails. En dehors de la production, aucun mail ne peut partir vers une vraie adresse : tout est redirigé vers `EMAIL_REDIRECTION`, et rien ne part si cette variable n'existe pas.
-- Les webhooks de Stripe et Resend sont signés, les traitements QStash aussi, et tout est idempotent. Si un message arrive deux fois, il n'est traité qu'une fois.
-- Le lien de paiement utilise un jeton aléatoire de 64 caractères, pas l'identifiant de la facture, et le montant est toujours relu dans la base. Le code refuse aussi toute clé Stripe qui ne serait pas une clé de test.
-
-### Les quotas
-
-Le quota de Groq est partagé entre tous les utilisateurs, donc chacun a sa propre part (Upstash Redis, fenêtre glissante) :
-
-| Ce qui est limité | Limite | Quand on la dépasse |
-| --- | --- | --- |
-| Lecture d'un PDF par l'IA | 2 par heure | Message d'erreur avec le temps à attendre, et le PDF déposé est supprimé |
-| Rédaction d'une relance | 30 par jour | Dunly utilise un modèle de texte fixe à la place |
-| Classement d'une réponse | 50 par jour | La réponse est classée "autre", sans passer par l'IA |
-| Ouverture d'un lien de paiement | 10 par heure et par lien | Page "Trop de tentatives" |
-
-J'ai mis exprès la lecture des PDF à 2 par heure pour pouvoir montrer le refus dans la vidéo. Si Redis tombe en panne, l'application continue de marcher normalement, et l'erreur est juste enregistrée dans les logs.
 
 ## Modèle d'IA
 
@@ -133,10 +111,6 @@ npm run lint; if ($?) { npm run typecheck }; if ($?) { npm test }
 ```
 
 Toutes les variables d'environnement sont listées (sans valeur) dans `.env.example`. En local, `EMAIL_REDIRECTION` est obligatoire, et tant qu'on n'a pas de domaine vérifié chez Resend, il faut y mettre l'adresse de son compte Resend.
-
-Les tests (Vitest) couvrent les calculs du tableau de bord et du retard, la lecture des montants et des dates, les niveaux de relance, la protection contre les montants inventés par l'IA, la vérification du texte modifié par l'utilisateur et le classement des réponses.
-
-Pour le travail sur le dépôt, j'ai fait un commit par étape du sujet. À partir de l'étape 5, chaque étape a été développée sur sa propre branche puis fusionnée avec une pull request, et la branche `main` est protégée (pull request obligatoire et vérification Vercel réussie avant de fusionner).
 
 ## Limites et améliorations possibles
 
